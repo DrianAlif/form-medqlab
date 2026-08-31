@@ -1,55 +1,79 @@
-import html2pdf from 'html2pdf.js';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 /**
- * Master Anti-Distortion PDF Export Engine
- * Preserves 100% natural aspect ratio, prevents any stretching/gepeng, and handles multi-page breaks cleanly.
+ * Exact Per-Sheet Sequential PDF Export Engine (jsPDF + html2canvas)
+ * - Guarantees EXACT page count (zero blank pages).
+ * - Preserves 100% mathematical aspect ratio (zero gepeng / zero stretching).
+ * - 300 DPI high-definition capture (scale: 2.5).
  */
 export async function handleDownloadPDF({
   containerId = 'pdf-export-container',
   orientation = 'portrait', // 'portrait' | 'landscape'
   filename = 'Dokumen_Applimetis.pdf'
 }) {
-  const element = document.getElementById(containerId) || document.getElementById('pdf-content');
-  if (!element) {
+  const container = document.getElementById(containerId) || document.getElementById('pdf-content');
+  if (!container) {
     console.error(`Container with id "${containerId}" not found`);
     return false;
   }
 
-  const opt = {
-    margin: [0, 0, 0, 0],
-    filename: filename,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: {
-      scale: 2.5, // 300 DPI high-definition capture
+  // 1. Select each discrete page sheet
+  let sheets = Array.from(container.querySelectorAll('.pdf-sheet'));
+  if (sheets.length === 0) {
+    sheets = Array.from(container.querySelectorAll('.pdf-page-portrait, .pdf-page-landscape'));
+  }
+  if (sheets.length === 0) {
+    sheets = [container];
+  }
+
+  const pdf = new jsPDF({
+    orientation: orientation,
+    unit: 'mm',
+    format: 'a4',
+    compress: true
+  });
+
+  const pdfPageWidth = orientation === 'portrait' ? 210 : 297;
+  const pdfPageHeight = orientation === 'portrait' ? 297 : 210;
+
+  for (let i = 0; i < sheets.length; i++) {
+    const sheet = sheets[i];
+
+    // High resolution render of this specific sheet
+    const canvas = await html2canvas(sheet, {
+      scale: 2.5, // 300 DPI crisp render
       useCORS: true,
       allowTaint: true,
       logging: false,
-      letterRendering: true,
-      scrollY: 0,
-      scrollX: 0,
-      windowWidth: orientation === 'landscape' ? 1200 : 900
-    },
-    jsPDF: {
-      unit: 'mm',
-      format: 'a4',
-      orientation: orientation, // 'portrait' or 'landscape'
-      compress: true
-    },
-    pagebreak: {
-      mode: ['css', 'legacy'],
-      before: ['.html2pdf__page-break', '.page-break'],
-      avoid: ['.no-break', 'tr', '.signature-section']
-    }
-  };
+      backgroundColor: '#ffffff'
+    });
 
-  try {
-    await html2pdf().set(opt).from(element).save();
-    return true;
-  } catch (error) {
-    console.error('PDF export failed:', error);
-    window.print();
-    return false;
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+    if (i > 0) {
+      pdf.addPage('a4', orientation);
+    }
+
+    // Calculate natural proportional dimensions to PREVENT ANY GEPENG / STRETCHING
+    const canvasRatio = canvas.height / canvas.width;
+    let renderWidth = pdfPageWidth;
+    let renderHeight = pdfPageWidth * canvasRatio;
+    let xOffset = 0;
+    let yOffset = 0;
+
+    if (renderHeight > pdfPageHeight) {
+      renderHeight = pdfPageHeight;
+      renderWidth = pdfPageHeight / canvasRatio;
+      xOffset = (pdfPageWidth - renderWidth) / 2;
+    }
+
+    // Add image with strictly preserved aspect ratio
+    pdf.addImage(imgData, 'JPEG', xOffset, yOffset, renderWidth, renderHeight, undefined, 'FAST');
   }
+
+  pdf.save(filename);
+  return true;
 }
 
 /**

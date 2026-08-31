@@ -60,8 +60,16 @@
 }
 
 /* ==========================================
-   A. KELAS HALAMAN PORTRAIT (Kosan & Makan)
+   A. KELAS SHEET HALAMAN DOKUMEN
    ========================================== */
+.pdf-sheet {
+  background-color: #ffffff;
+  color: #000000;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* Portrait A4 Sheet (Kosan & Makan) */
 .pdf-page-portrait {
   width: 800px;
   max-width: 800px;
@@ -70,16 +78,11 @@
   padding: 24px;
   box-sizing: border-box;
   background: #ffffff;
-  color: #000000;
   position: relative;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  page-break-after: always;
-  break-after: page;
 }
 
-/* ==========================================
-   B. KELAS HALAMAN LANDSCAPE (Lembur & Akomodasi)
-   ========================================== */
+/* Landscape A4 Sheet (Lembur & Akomodasi) */
 .pdf-page-landscape {
   width: 1080px;
   max-width: 1080px;
@@ -88,17 +91,8 @@
   padding: 24px;
   box-sizing: border-box;
   background: #ffffff;
-  color: #000000;
   position: relative;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  page-break-after: always;
-  break-after: page;
-}
-
-.pdf-page-container {
-  box-sizing: border-box;
-  background-color: #ffffff;
-  color: #000000;
 }
 
 /* Page inner flex wrapper */
@@ -174,23 +168,14 @@
   border-radius: 6px;
 }
 
-/* Page break marker for multi-page PDF generation */
-.html2pdf__page-break, .page-break {
-  page-break-before: always !important;
-  break-before: page !important;
-  margin: 0 !important;
-  height: 0 !important;
-  padding: 0 !important;
-  display: block !important;
-}
-
+/* No Break rule */
 .no-break {
   page-break-inside: avoid !important;
   break-inside: avoid !important;
 }
 
 /* ==========================================
-   RESET MEDIA PRINT GLOBAL
+   RESET MEDIA PRINT GLOBAL (Browser Print)
    ========================================== */
 @media print {
   html, body {
@@ -221,24 +206,28 @@
     padding: 0 !important;
   }
 
-  .pdf-page-portrait {
-    width: 100% !important;
-    max-width: 100% !important;
-    padding: 10mm 12mm !important;
+  .pdf-sheet {
     box-shadow: none !important;
     margin: 0 !important;
     page-break-after: always !important;
     break-after: page !important;
   }
 
+  .pdf-sheet:last-child {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  .pdf-page-portrait {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 10mm 12mm !important;
+  }
+
   .pdf-page-landscape {
     width: 100% !important;
     max-width: 100% !important;
     padding: 8mm 10mm !important;
-    box-shadow: none !important;
-    margin: 0 !important;
-    page-break-after: always !important;
-    break-after: page !important;
   }
 
   .employee-info-box {
@@ -250,16 +239,6 @@
   }
   .info-row {
     grid-template-columns: 95px 12px 1fr !important;
-  }
-
-  .page-break {
-    page-break-before: always !important;
-    break-before: page !important;
-  }
-
-  .no-break {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
   }
 }
 

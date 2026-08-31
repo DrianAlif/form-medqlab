@@ -11,17 +11,14 @@ export function MakanPreview({ data }) {
   return (
     <div id="pdf-export-container" className="w-full flex flex-col items-center gap-8 print:gap-0 font-sans">
       {/* LEMBAR 1: PERMINTAAN UANG MUKA (Portrait A4) */}
-      <div className="pdf-page-portrait">
+      <div className="pdf-sheet pdf-page-portrait">
         <div className="page-inner-content flex flex-col justify-start">
           <PermintaanUangMukaVoucher data={data} totalAmount={totalAmount} />
         </div>
       </div>
 
-      {/* PAGE BREAK FOR MULTI-PAGE EXPORT */}
-      <div className="html2pdf__page-break page-break"></div>
-
       {/* LEMBAR 2: LAMPIRAN KONSUMSI TIM (Portrait A4) */}
-      <div className="pdf-page-portrait text-black text-[10px]">
+      <div className="pdf-sheet pdf-page-portrait text-black text-[10px]">
         <div className="page-inner-content flex flex-col justify-start">
           {/* Top Metadata */}
           <div className="flex justify-between items-start mb-3">

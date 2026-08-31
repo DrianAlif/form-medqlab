@@ -9,7 +9,7 @@ export function LemburPreview({ data }) {
   return (
     <div id="pdf-export-container" className="w-full flex flex-col items-center font-sans">
       {/* LEMBAR 1: KOMPENSASI KERJA (Landscape A4 Penuh) */}
-      <div className="pdf-page-landscape text-black text-[10px]">
+      <div className="pdf-sheet pdf-page-landscape text-black text-[10px]">
         <div className="page-inner-content flex flex-col justify-between h-full">
           <div>
             {/* Top Header */}
