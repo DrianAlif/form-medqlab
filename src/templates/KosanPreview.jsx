@@ -26,6 +26,9 @@ export function KosanPreview({ data }) {
         </div>
       </div>
 
+      {/* PAGE BREAK FOR MULTI-PAGE EXPORT */}
+      <div className="html2pdf__page-break page-break"></div>
+
       {/* LEMBAR 2: LAMPIRAN BUDGETING DINAMIS (Portrait A4) */}
       <div className="pdf-page-portrait text-black text-[10px]">
         <div className="page-inner-content flex flex-col justify-start">

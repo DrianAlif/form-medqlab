@@ -330,50 +330,55 @@ export function AkomodasiPreview({ data }) {
 
       {/* LEMBAR 2 DAN SETERUSNYA: ATTACHMENT PAGES (LAMPIRAN BUKTI TRANSAKSI) */}
       {attachmentChunks.map((chunk, pageIndex) => (
-        <div key={`att-page-${pageIndex}`} className="pdf-page-landscape text-black text-[10px]">
-          <div className="page-inner-content flex flex-col justify-start h-full">
-            {/* Header */}
-            <div className="flex items-center justify-between pb-2 mb-3 border-b border-black">
-              <div className="flex items-center gap-2.5">
-                <Logo className="h-8" showText={true} />
-              </div>
-              <div className="flex-1 text-center pr-16">
-                <h2 className="text-[15px] font-extrabold tracking-wider text-black uppercase">
-                  LAMPIRAN BUKTI TRANSAKSI & PEMBAYARAN
-                </h2>
-                <p className="text-[9.5px] text-slate-600 mt-0.5">
-                  Pegawai: <span className="font-bold">{data.nama || '-'}</span> | Customer: <span className="font-bold">{data.customer || '-'}</span> | Periode: <span className="font-bold">{data.periode || '-'}</span> {attachmentChunks.length > 1 ? `(Hal. ${pageIndex + 1} dari ${attachmentChunks.length})` : ''}
-                </p>
-              </div>
-            </div>
+        <React.Fragment key={`att-page-${pageIndex}`}>
+          {/* PAGE BREAK FOR MULTI-PAGE EXPORT */}
+          <div className="html2pdf__page-break page-break"></div>
 
-            {/* 2x2 Grid of Receipt Attachments with Anti-Distortion Styling */}
-            <div className="grid grid-cols-2 gap-3.5 flex-1">
-              {chunk.map((att, idx) => {
-                const globalIndex = pageIndex * 4 + idx + 1;
-                return (
-                  <div
-                    key={att.id || idx}
-                    className="no-break border border-slate-300 rounded-xl p-2.5 bg-white flex flex-col items-center justify-between shadow-xs"
-                  >
-                    <div className="w-full flex-1 flex items-center justify-center p-1 bg-slate-50 rounded-lg overflow-hidden border border-slate-100 max-h-[220px]">
-                      <img
-                        src={att.dataUrl}
-                        alt={att.caption || `Bukti ${globalIndex}`}
-                        className="attachment-img max-h-[200px] w-full"
-                      />
+          <div className="pdf-page-landscape text-black text-[10px]">
+            <div className="page-inner-content flex flex-col justify-start h-full">
+              {/* Header */}
+              <div className="flex items-center justify-between pb-2 mb-3 border-b border-black">
+                <div className="flex items-center gap-2.5">
+                  <Logo className="h-8" showText={true} />
+                </div>
+                <div className="flex-1 text-center pr-16">
+                  <h2 className="text-[15px] font-extrabold tracking-wider text-black uppercase">
+                    LAMPIRAN BUKTI TRANSAKSI & PEMBAYARAN
+                  </h2>
+                  <p className="text-[9.5px] text-slate-600 mt-0.5">
+                    Pegawai: <span className="font-bold">{data.nama || '-'}</span> | Customer: <span className="font-bold">{data.customer || '-'}</span> | Periode: <span className="font-bold">{data.periode || '-'}</span> {attachmentChunks.length > 1 ? `(Hal. ${pageIndex + 1} dari ${attachmentChunks.length})` : ''}
+                  </p>
+                </div>
+              </div>
+
+              {/* 2x2 Grid of Receipt Attachments with Anti-Distortion Styling */}
+              <div className="grid grid-cols-2 gap-3.5 flex-1">
+                {chunk.map((att, idx) => {
+                  const globalIndex = pageIndex * 4 + idx + 1;
+                  return (
+                    <div
+                      key={att.id || idx}
+                      className="no-break border border-slate-300 rounded-xl p-2.5 bg-white flex flex-col items-center justify-between shadow-xs"
+                    >
+                      <div className="w-full flex-1 flex items-center justify-center p-1 bg-slate-50 rounded-lg overflow-hidden border border-slate-100 max-h-[220px]">
+                        <img
+                          src={att.dataUrl}
+                          alt={att.caption || `Bukti ${globalIndex}`}
+                          className="attachment-img max-h-[200px] w-full"
+                        />
+                      </div>
+                      <div className="mt-1.5 text-center w-full">
+                        <span className="text-[9.5px] font-bold text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200 inline-block truncate max-w-full">
+                          Bukti #{globalIndex}: {att.caption || `Struk Transaksi ${globalIndex}`}
+                        </span>
+                      </div>
                     </div>
-                    <div className="mt-1.5 text-center w-full">
-                      <span className="text-[9.5px] font-bold text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200 inline-block truncate max-w-full">
-                        Bukti #{globalIndex}: {att.caption || `Struk Transaksi ${globalIndex}`}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
+        </React.Fragment>
       ))}
     </div>
   );

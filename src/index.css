@@ -63,42 +63,36 @@
    A. KELAS HALAMAN PORTRAIT (Kosan & Makan)
    ========================================== */
 .pdf-page-portrait {
-  width: 210mm;
-  height: 297mm;
-  min-height: 297mm;
-  max-height: 297mm;
+  width: 800px;
+  max-width: 800px;
+  min-height: 520px;
   margin: 0 auto;
-  padding: 12mm 15mm;
+  padding: 24px;
   box-sizing: border-box;
   background: #ffffff;
+  color: #000000;
   position: relative;
-  overflow: hidden;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  page-break-after: always !important;
-  break-after: page !important;
-  page-break-inside: avoid !important;
-  break-inside: avoid !important;
+  page-break-after: always;
+  break-after: page;
 }
 
 /* ==========================================
    B. KELAS HALAMAN LANDSCAPE (Lembur & Akomodasi)
    ========================================== */
 .pdf-page-landscape {
-  width: 297mm;
-  height: 210mm;
-  min-height: 210mm;
-  max-height: 210mm;
+  width: 1080px;
+  max-width: 1080px;
+  min-height: 520px;
   margin: 0 auto;
-  padding: 10mm 12mm;
+  padding: 24px;
   box-sizing: border-box;
   background: #ffffff;
+  color: #000000;
   position: relative;
-  overflow: hidden;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  page-break-after: always !important;
-  break-after: page !important;
-  page-break-inside: avoid !important;
-  break-inside: avoid !important;
+  page-break-after: always;
+  break-after: page;
 }
 
 .pdf-page-container {
@@ -110,7 +104,6 @@
 /* Page inner flex wrapper */
 .page-inner-content {
   width: 100%;
-  height: 100%;
   box-sizing: border-box;
 }
 
@@ -185,6 +178,10 @@
 .html2pdf__page-break, .page-break {
   page-break-before: always !important;
   break-before: page !important;
+  margin: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+  display: block !important;
 }
 
 .no-break {
@@ -198,7 +195,7 @@
 @media print {
   html, body {
     width: 100% !important;
-    height: 100% !important;
+    height: auto !important;
     margin: 0 !important;
     padding: 0 !important;
     background: #ffffff !important;
@@ -216,7 +213,8 @@
   }
 
   /* Tampilkan area render penuh */
-  #pdf-export-container {
+  #pdf-export-container,
+  #pdf-content {
     display: block !important;
     width: 100% !important;
     margin: 0 !important;
@@ -224,6 +222,9 @@
   }
 
   .pdf-page-portrait {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 10mm 12mm !important;
     box-shadow: none !important;
     margin: 0 !important;
     page-break-after: always !important;
@@ -231,6 +232,9 @@
   }
 
   .pdf-page-landscape {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 8mm 10mm !important;
     box-shadow: none !important;
     margin: 0 !important;
     page-break-after: always !important;
