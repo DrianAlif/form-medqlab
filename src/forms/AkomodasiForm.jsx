@@ -1,8 +1,11 @@
-import React from 'react';
-import { Plus, Trash2, PenTool, Upload, Image as ImageIcon, ArrowUp, ArrowDown, Calculator, FileText } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, Trash2, PenTool, Upload, Image as ImageIcon, ArrowUp, ArrowDown, Calculator, FileText, Loader2, FileCheck } from 'lucide-react';
 import { formatRupiah } from '../utils/currency';
+import { processUploadedFile } from '../utils/fileUploadHelper';
 
 export function AkomodasiForm({ data, onChange, onOpenSignatureModal }) {
+  const [isProcessingFile, setIsProcessingFile] = useState(false);
+
   const updateField = (field, value) => {
     onChange({ ...data, [field]: value });
   };
@@ -44,28 +47,30 @@ export function AkomodasiForm({ data, onChange, onOpenSignatureModal }) {
     updateField('items', newItems);
   };
 
-  // --- Multi-file Attachment Operations ---
-  const handleFileUpload = (e) => {
+  // --- Multi-file Attachment Operations (PNG/JPG/PDF Supported) ---
+  const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const newAttachment = {
-          id: `att-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-          name: file.name,
-          dataUrl: event.target.result,
-          caption: file.name.replace(/\.[^/.]+$/, "")
-        };
-        onChange(prev => ({
-          ...prev,
-          attachments: [...(prev.attachments || []), newAttachment]
-        }));
-      };
-      reader.readAsDataURL(file);
-    });
-    e.target.value = '';
+    setIsProcessingFile(true);
+    try {
+      let newlyAdded = [];
+      for (const file of files) {
+        const processedItems = await processUploadedFile(file);
+        newlyAdded = newlyAdded.concat(processedItems);
+      }
+
+      onChange(prev => ({
+        ...prev,
+        attachments: [...(prev.attachments || []), ...newlyAdded]
+      }));
+    } catch (err) {
+      console.error('File upload/conversion error:', err);
+      alert('Gagal memproses file yang diunggah. Pastikan format PNG, JPG, atau PDF valid.');
+    } finally {
+      setIsProcessingFile(false);
+      e.target.value = '';
+    }
   };
 
   const handleUpdateCaption = (index, caption) => {
@@ -438,7 +443,7 @@ export function AkomodasiForm({ data, onChange, onOpenSignatureModal }) {
         </div>
       </div>
 
-      {/* 4. UPLOAD BUKTI TRANSAKSI (ATTACHMENT IMAGES) */}
+      {/* 4. UPLOAD BUKTI TRANSAKSI (PNG, JPG, PDF ATTACHMENTS) */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
           <div>
@@ -447,18 +452,28 @@ export function AkomodasiForm({ data, onChange, onOpenSignatureModal }) {
               D. Lampiran Bukti Transaksi & Pembayaran
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Upload struk Gojek, KRL, Tiket, Invoice, Struk Bensin / Hotel (Otomatis masuk ke Halaman 2 PDF)
+              Upload struk Gojek/Grab, KRL, Tiket, Invoice, Struk Bensin/Hotel (Format: <span className="font-bold text-slate-700">PNG, JPG, PDF</span>)
             </p>
           </div>
 
-          <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm transition">
-            <Upload className="w-4 h-4" />
-            <span>+ Upload Foto Bukti</span>
+          <label className={`cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm transition ${isProcessingFile ? 'opacity-60 pointer-events-none' : ''}`}>
+            {isProcessingFile ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Memproses File...</span>
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4" />
+                <span>+ Upload Bukti (PNG / PDF)</span>
+              </>
+            )}
             <input
               type="file"
-              accept="image/*"
+              accept="image/png,image/jpeg,image/jpg,image/webp,application/pdf,.pdf"
               multiple
               onChange={handleFileUpload}
+              disabled={isProcessingFile}
               className="hidden"
             />
           </label>
@@ -468,7 +483,7 @@ export function AkomodasiForm({ data, onChange, onOpenSignatureModal }) {
         {(data.attachments || []).length === 0 ? (
           <div className="p-8 border-2 border-dashed border-slate-200 rounded-xl text-center text-xs text-slate-400 bg-slate-50/50">
             <ImageIcon className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-            <span>Belum ada foto struk/bukti transaksi diunggah. Klik tombol di atas untuk menambahkan.</span>
+            <span>Belum ada file bukti/struk diunggah. Klik tombol di atas untuk mengunggah file <strong>PNG, JPG, atau PDF</strong>.</span>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -486,14 +501,17 @@ export function AkomodasiForm({ data, onChange, onOpenSignatureModal }) {
                 </div>
 
                 <div className="flex-1 space-y-1.5 min-w-0">
-                  <label className="block text-[10px] font-semibold text-slate-500">
-                    Keterangan / Tanggal Bukti
-                  </label>
+                  <div className="flex items-center justify-between text-[10px] font-bold text-slate-600">
+                    <span className="truncate">Bukti #{idx + 1}</span>
+                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 font-semibold">
+                      {att.name?.toLowerCase().endsWith('.pdf') ? 'PDF Page' : 'Image'}
+                    </span>
+                  </div>
                   <input
                     type="text"
                     value={att.caption || ''}
                     onChange={(e) => handleUpdateCaption(idx, e.target.value)}
-                    placeholder="Contoh: GoRide RSCM (Rp 25.000)"
+                    placeholder="Contoh: Tiket Kereta / GoRide RSCM"
                     className="w-full px-2.5 py-1 border border-slate-300 rounded bg-white text-xs"
                   />
                 </div>
