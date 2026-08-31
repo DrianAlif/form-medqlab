@@ -1,5 +1,6 @@
 /**
- * High quality client-side PDF export engine using html2pdf.js
+ * Master PDF Export Engine using html2pdf.js + html2canvas + jsPDF
+ * Calibrated for high-DPI rendering, anti-distortion image scaling, and precise page breaks.
  */
 
 export async function exportToPdf(elementId, filename = 'document.pdf', orientation = 'portrait') {
@@ -17,19 +18,25 @@ export async function exportToPdf(elementId, filename = 'document.pdf', orientat
     filename: filename,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: {
-      scale: 2.5, // Crisp high-DPI rendering
+      scale: 2.8, // 300 DPI high-definition capture
       useCORS: true,
+      allowTaint: true,
       logging: false,
       letterRendering: true,
       scrollY: 0,
-      windowWidth: orientation === 'landscape' ? 1200 : 900
+      windowWidth: orientation === 'landscape' ? 1280 : 960
     },
     jsPDF: {
       unit: 'mm',
       format: 'a4',
-      orientation: orientation // 'portrait' or 'landscape'
+      orientation: orientation, // 'portrait' or 'landscape'
+      compress: true
     },
-    pagebreak: { mode: ['css', 'legacy'], before: '.html2pdf__page-break' }
+    pagebreak: {
+      mode: ['css', 'legacy'],
+      before: ['.html2pdf__page-break', '.page-break'],
+      avoid: ['.no-break', '.signature-section', 'tr']
+    }
   };
 
   try {
@@ -37,7 +44,7 @@ export async function exportToPdf(elementId, filename = 'document.pdf', orientat
     return true;
   } catch (error) {
     console.error('PDF export failed:', error);
-    // Fallback to print
+    // Fallback to native print dialog
     window.print();
     return false;
   }

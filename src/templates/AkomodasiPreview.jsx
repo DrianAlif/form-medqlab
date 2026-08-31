@@ -28,10 +28,16 @@ export function AkomodasiPreview({ data }) {
 
   const attachments = data.attachments || [];
 
+  // Chunk attachments into pages of 4 items each (2x2 grid)
+  const attachmentChunks = [];
+  for (let i = 0; i < attachments.length; i += 4) {
+    attachmentChunks.push(attachments.slice(i, i + 4));
+  }
+
   return (
-    <div id="pdf-content" className="w-full flex flex-col items-center gap-8 print:gap-0">
-      {/* PAGE 1: FORMULIR LAPORAN AKOMODASI (Landscape 1050px) */}
-      <div className="pdf-page-container w-full max-w-[1050px] p-8 text-black font-sans text-[10px] min-h-[640px] flex flex-col justify-between">
+    <div id="pdf-content" className="w-full flex flex-col items-center gap-8 print:gap-0 font-sans">
+      {/* PAGE 1: FORMULIR LAPORAN AKOMODASI (Landscape Standard A4) */}
+      <div className="pdf-page-container pdf-page-landscape w-full max-w-[1100px] p-8 text-black text-[10px] min-h-[720px] flex flex-col justify-between">
         <div>
           {/* Header Bar */}
           <div className="flex items-center justify-between pb-3 mb-2 border-b border-black">
@@ -75,23 +81,23 @@ export function AkomodasiPreview({ data }) {
             </div>
           </div>
 
-          {/* Main Expense Table */}
+          {/* Main Expense Table (13 Columns, tabular numbers) */}
           <div className="border border-black overflow-hidden mb-3">
             <table className="w-full border-collapse text-[9.5px]">
               <colgroup>
                 <col style={{ width: '28px' }} />
                 <col style={{ width: '110px' }} />
-                <col style={{ width: '90px' }} />
+                <col style={{ width: '95px' }} />
                 <col />
-                <col style={{ width: '55px' }} />
-                <col style={{ width: '55px' }} />
-                <col style={{ width: '55px' }} />
-                <col style={{ width: '55px' }} />
-                <col style={{ width: '65px' }} />
-                <col style={{ width: '55px' }} />
-                <col style={{ width: '65px' }} />
+                <col style={{ width: '58px' }} />
+                <col style={{ width: '58px' }} />
+                <col style={{ width: '58px' }} />
+                <col style={{ width: '58px' }} />
+                <col style={{ width: '68px' }} />
+                <col style={{ width: '58px' }} />
                 <col style={{ width: '68px' }} />
                 <col style={{ width: '72px' }} />
+                <col style={{ width: '75px' }} />
               </colgroup>
               <thead>
                 <tr className="bg-slate-100 text-black font-bold text-center border-b border-black text-[9px] leading-tight">
@@ -218,7 +224,7 @@ export function AkomodasiPreview({ data }) {
         </div>
 
         {/* BOTTOM SECTION: REKAPITULASI & TANDA TANGAN */}
-        <div className="grid grid-cols-12 gap-6 items-start mt-2">
+        <div className="no-break grid grid-cols-12 gap-6 items-start mt-2">
           {/* Left Financial Summary Box */}
           <div className="col-span-5 border border-black bg-slate-100 text-[9.5px]">
             <div className="border-b border-black p-1.5 font-bold flex justify-between">
@@ -250,7 +256,7 @@ export function AkomodasiPreview({ data }) {
           </div>
 
           {/* Right Signature Area */}
-          <div className="col-span-7 flex flex-col justify-between min-h-[140px]">
+          <div className="col-span-7 flex flex-col justify-between min-h-[140px] signature-section">
             <div className="text-right text-[10px] font-semibold pr-4 pb-2">
               {data.tanggalDokumen || '31 Agustus 2026'}
             </div>
@@ -312,12 +318,12 @@ export function AkomodasiPreview({ data }) {
       </div>
 
       {/* PAGE 2 AND BEYOND: ATTACHMENT PAGES (LAMPIRAN BUKTI TRANSAKSI) */}
-      {attachments.length > 0 && (
-        <React.Fragment>
+      {attachmentChunks.map((chunk, pageIndex) => (
+        <React.Fragment key={`att-page-${pageIndex}`}>
           {/* Page Break */}
-          <div className="html2pdf__page-break"></div>
+          <div className="html2pdf__page-break page-break"></div>
 
-          <div className="pdf-page-container w-full max-w-[1050px] p-8 text-black font-sans text-[11px] min-h-[640px] flex flex-col justify-start">
+          <div className="pdf-page-container pdf-page-landscape w-full max-w-[1100px] p-8 text-black text-[11px] min-h-[720px] flex flex-col justify-start">
             {/* Header */}
             <div className="flex items-center justify-between pb-3 mb-4 border-b border-black">
               <div className="flex items-center gap-3">
@@ -328,36 +334,39 @@ export function AkomodasiPreview({ data }) {
                   LAMPIRAN BUKTI TRANSAKSI & PEMBAYARAN
                 </h2>
                 <p className="text-[10px] text-slate-600 mt-0.5">
-                  Pegawai: <span className="font-bold">{data.nama || '-'}</span> | Customer: <span className="font-bold">{data.customer || '-'}</span> | Periode: <span className="font-bold">{data.periode || '-'}</span>
+                  Pegawai: <span className="font-bold">{data.nama || '-'}</span> | Customer: <span className="font-bold">{data.customer || '-'}</span> | Periode: <span className="font-bold">{data.periode || '-'}</span> {attachmentChunks.length > 1 ? `(Hal. ${pageIndex + 1} dari ${attachmentChunks.length})` : ''}
                 </p>
               </div>
             </div>
 
-            {/* 2x2 Grid of Receipt Attachments */}
+            {/* 2x2 Grid of Receipt Attachments with Anti-Distortion Styling */}
             <div className="grid grid-cols-2 gap-4 flex-1">
-              {attachments.map((att, idx) => (
-                <div
-                  key={att.id || idx}
-                  className="border border-slate-300 rounded-xl p-3 bg-white flex flex-col items-center justify-between shadow-xs"
-                >
-                  <div className="w-full flex-1 flex items-center justify-center p-1 bg-slate-50 rounded-lg overflow-hidden border border-slate-100 max-h-[270px]">
-                    <img
-                      src={att.dataUrl}
-                      alt={att.caption || `Bukti ${idx + 1}`}
-                      className="max-h-[250px] w-auto max-w-full object-contain rounded"
-                    />
+              {chunk.map((att, idx) => {
+                const globalIndex = pageIndex * 4 + idx + 1;
+                return (
+                  <div
+                    key={att.id || idx}
+                    className="no-break border border-slate-300 rounded-xl p-3 bg-white flex flex-col items-center justify-between shadow-xs"
+                  >
+                    <div className="w-full flex-1 flex items-center justify-center p-1 bg-slate-50 rounded-lg overflow-hidden border border-slate-100 max-h-[300px]">
+                      <img
+                        src={att.dataUrl}
+                        alt={att.caption || `Bukti ${globalIndex}`}
+                        className="attachment-img max-h-[280px] w-full"
+                      />
+                    </div>
+                    <div className="mt-2 text-center w-full">
+                      <span className="text-[10px] font-bold text-slate-800 bg-slate-100 px-3 py-0.5 rounded-full border border-slate-200 inline-block truncate max-w-full">
+                        Bukti #{globalIndex}: {att.caption || `Struk Transaksi ${globalIndex}`}
+                      </span>
+                    </div>
                   </div>
-                  <div className="mt-2 text-center w-full">
-                    <span className="text-[10px] font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200 inline-block">
-                      Bukti #{idx + 1}: {att.caption || `Struk Transaksi ${idx + 1}`}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </React.Fragment>
-      )}
+      ))}
     </div>
   );
 }
