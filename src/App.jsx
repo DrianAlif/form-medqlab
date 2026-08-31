@@ -3,15 +3,18 @@ import { Header } from './components/Header';
 import { KosanForm, getNormalizedParentCategories } from './forms/KosanForm';
 import { MakanForm } from './forms/MakanForm';
 import { LemburForm } from './forms/LemburForm';
+import { AkomodasiForm } from './forms/AkomodasiForm';
 import { KosanPreview } from './templates/KosanPreview';
 import { MakanPreview } from './templates/MakanPreview';
 import { LemburPreview } from './templates/LemburPreview';
+import { AkomodasiPreview } from './templates/AkomodasiPreview';
 import { SignatureModal } from './components/SignatureModal';
 import { HistoryModal } from './components/HistoryModal';
 import {
   initialKosanData,
   initialMakanData,
-  initialLemburData
+  initialLemburData,
+  initialAkomodasiData
 } from './utils/sampleData';
 import { exportToPdf } from './utils/pdfExport';
 import { saveDocument } from './api/client';
@@ -62,11 +65,12 @@ class ErrorBoundary extends Component {
 }
 
 function MainApp() {
-  const [activeTab, setActiveTab] = useState('kosan'); // 'kosan', 'makan', 'lembur'
+  const [activeTab, setActiveTab] = useState('kosan'); // 'kosan', 'makan', 'lembur', 'akomodasi'
   
   const [kosanData, setKosanData] = useState(initialKosanData);
   const [makanData, setMakanData] = useState(initialMakanData);
   const [lemburData, setLemburData] = useState(initialLemburData);
+  const [akomodasiData, setAkomodasiData] = useState(initialAkomodasiData);
 
   // Modal States
   const [sigModal, setSigModal] = useState({
@@ -112,6 +116,8 @@ function MainApp() {
       }
     } else if (activeTab === 'lembur') {
       setLemburData(prev => ({ ...prev, [targetField]: dataUrl }));
+    } else if (activeTab === 'akomodasi') {
+      setAkomodasiData(prev => ({ ...prev, [targetField]: dataUrl }));
     }
   };
 
@@ -121,6 +127,7 @@ function MainApp() {
       if (activeTab === 'kosan') setKosanData(initialKosanData);
       if (activeTab === 'makan') setMakanData(initialMakanData);
       if (activeTab === 'lembur') setLemburData(initialLemburData);
+      if (activeTab === 'akomodasi') setAkomodasiData(initialAkomodasiData);
       showToast('Data contoh template berhasil dimuat!');
     }
   };
@@ -149,6 +156,19 @@ function MainApp() {
       currentData = lemburData;
       title = `Kompensasi Kerja - ${lemburData.nama || ''} (${lemburData.bulan || ''})`;
       total = (lemburData.items || []).reduce((a, b) => a + (Number(b.jamCount) || 0), 0);
+    } else if (activeTab === 'akomodasi') {
+      currentData = akomodasiData;
+      title = `Laporan Akomodasi - ${akomodasiData.nama || 'Pegawai'} (${akomodasiData.customer || 'Project'})`;
+      total = (akomodasiData.items || []).reduce((acc, it) => {
+        return acc + (Number(it.bensin) || 0) +
+          (Number(it.tolParkir) || 0) +
+          (Number(it.pjs) || 0) +
+          (Number(it.hotel) || 0) +
+          (Number(it.entertaint) || 0) +
+          (Number(it.tiket) || 0) +
+          (Number(it.fotocopy) || 0) +
+          (Number(it.lainLain) || 0);
+      }, 0);
     }
 
     const res = await saveDocument(activeTab, title, currentData, total);
@@ -184,6 +204,8 @@ function MainApp() {
       setMakanData({ ...initialMakanData, ...parsedData });
     } else if (targetType === 'lembur') {
       setLemburData({ ...initialLemburData, ...parsedData });
+    } else if (targetType === 'akomodasi') {
+      setAkomodasiData({ ...initialAkomodasiData, ...parsedData });
     }
 
     showToast(`Dokumen "${doc.title || 'Draft'}" berhasil dimuat!`);
@@ -203,6 +225,9 @@ function MainApp() {
       orientation = 'portrait';
     } else if (activeTab === 'lembur') {
       filename = `Kompensasi_Kerja_Lembur_${lemburData.nama || 'Staff'}.pdf`;
+      orientation = 'landscape';
+    } else if (activeTab === 'akomodasi') {
+      filename = `Laporan_Akomodasi_${akomodasiData.nama || 'Pegawai'}_${akomodasiData.customer || 'Project'}.pdf`;
       orientation = 'landscape';
     }
 
@@ -285,6 +310,14 @@ function MainApp() {
                 onOpenSignatureModal={handleOpenSignature}
               />
             )}
+
+            {activeTab === 'akomodasi' && (
+              <AkomodasiForm
+                data={akomodasiData}
+                onChange={setAkomodasiData}
+                onOpenSignatureModal={handleOpenSignature}
+              />
+            )}
           </div>
         </section>
 
@@ -298,7 +331,11 @@ function MainApp() {
               </span>
             </div>
             <span className="text-[11px] text-slate-400">
-              {activeTab === 'lembur' ? 'Format Landscape A4' : 'Format 2 Halaman (Voucher + Rincian)'}
+              {activeTab === 'lembur'
+                ? 'Format Landscape A4 (1 Halaman)'
+                : activeTab === 'akomodasi'
+                ? 'Format Landscape A4 (Multi-Halaman + Lampiran)'
+                : 'Format 2 Halaman (Voucher + Rincian)'}
             </span>
           </div>
 
@@ -307,6 +344,7 @@ function MainApp() {
             {activeTab === 'kosan' && <KosanPreview data={kosanData} />}
             {activeTab === 'makan' && <MakanPreview data={makanData} />}
             {activeTab === 'lembur' && <LemburPreview data={lemburData} />}
+            {activeTab === 'akomodasi' && <AkomodasiPreview data={akomodasiData} />}
           </div>
         </section>
       </main>

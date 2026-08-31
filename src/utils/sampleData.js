@@ -7,6 +7,7 @@ export const SAMPLE_SIGNATURE_ALIF = TTD_ALIF_B64;
 export const SAMPLE_SIGNATURE_TRI = TTD_TRI_B64;
 export const SAMPLE_SIGNATURE_IKHSAN = TTD_IKHSAN_B64;
 export const SAMPLE_SIGNATURE_FERRY = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 80' width='180' height='80'><path d='M20,50 Q40,10 70,30 T110,40 Q130,20 160,35 M30,55 Q60,65 140,45' stroke='%23000' stroke-width='3' fill='none' stroke-linecap='round'/></svg>";
+export const SAMPLE_SIGNATURE_PRAHMAD = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 80' width='160' height='80'><path d='M20,55 Q30,20 40,38 T55,22 Q65,65 75,25 T90,52 M25,60 L135,60' stroke='%23000' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>";
 
 export const initialKosanData = {
   nomor: '',
@@ -160,4 +161,49 @@ export const initialLemburData = {
     { id: 'l-10', tanggal: '16/08/2026', hari: 'Minggu', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: true },
     { id: 'l-11', tanggal: '17/08/2026', hari: 'Senin (Hari Kemerdekaan)', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: true }
   ]
+};
+
+// 4. Laporan Akomodasi Sample Data
+export const initialAkomodasiData = {
+  nama: 'M. Prahmadyan',
+  nik: 'NPP-0021',
+  jabatan: 'Implementator',
+  department: 'Project',
+  customer: 'RSCM',
+  periode: '19 Mei - 03 Juni 2025',
+  tanggalDokumen: '31 Agustus 2026',
+
+  // Expenses table items
+  items: [
+    {
+      id: 'ak-1',
+      tanggal: '19 Mei - 03 Juni 2025',
+      customer: 'RSCM',
+      tujuan: 'Transportasi',
+      bensin: 0,
+      tolParkir: 0,
+      pjs: 0,
+      hotel: 0,
+      entertaint: 0,
+      tiket: 0,
+      fotocopy: 0,
+      lainLain: 434000
+    }
+  ],
+
+  // Financial summary
+  totalDiterima1: 0,
+  totalDiterima2: 0,
+  keteranganSummary: '',
+
+  // Signatures
+  dibuatOlehNama: 'M. Prahmadyan',
+  dibuatOlehSign: SAMPLE_SIGNATURE_PRAHMAD,
+  diketahuiOlehNama: '',
+  diketahuiOlehSign: '',
+  disetujuiOlehNama: '',
+  disetujuiOlehSign: '',
+
+  // Uploaded receipt images
+  attachments: []
 };

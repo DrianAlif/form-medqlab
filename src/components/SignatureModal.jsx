@@ -4,7 +4,8 @@ import {
   SAMPLE_SIGNATURE_ALIF,
   SAMPLE_SIGNATURE_TRI,
   SAMPLE_SIGNATURE_IKHSAN,
-  SAMPLE_SIGNATURE_FERRY
+  SAMPLE_SIGNATURE_FERRY,
+  SAMPLE_SIGNATURE_PRAHMAD
 } from '../utils/sampleData';
 
 const signaturePresets = [
@@ -25,6 +26,12 @@ const signaturePresets = [
     name: "Ikhsan Akbar Aryandi",
     role: "Pemohon / Terkait",
     dataUrl: SAMPLE_SIGNATURE_IKHSAN,
+  },
+  {
+    id: "ttd-prahmad",
+    name: "M. Prahmadyan (Pemohon)",
+    role: "Pemohon",
+    dataUrl: SAMPLE_SIGNATURE_PRAHMAD,
   },
   {
     id: "ttd-ferry",
