@@ -7,9 +7,14 @@
     height: 100%;
     margin: 0;
     padding: 0;
-    overflow: hidden;
     font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
+  }
+
+  @media screen and (min-width: 1024px) {
+    html, body {
+      overflow: hidden;
+    }
   }
 
   /* 1. High-contrast, highly visible cursor & caret in all input fields */
@@ -35,8 +40,8 @@
 
 /* Custom smooth thin scrollbars for editor and preview panes */
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -72,6 +77,72 @@
 .pdf-page-landscape {
   width: 1120px;
   min-height: 790px;
+}
+
+/* --- TAMPILAN DEFAULT / EXPORT PDF (Tetap 2 Kolom Presisi) --- */
+.employee-info-box {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  border: 1.5px solid #1e293b;
+  border-radius: 6px;
+  padding: 10px 18px;
+  margin: 10px 0 14px 0;
+  background-color: #ffffff;
+  box-sizing: border-box;
+  font-family: 'Inter', Arial, sans-serif;
+  font-size: 9.5pt;
+}
+
+.info-column {
+  width: 48%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.info-row {
+  display: grid;
+  grid-template-columns: 95px 12px 1fr;
+  align-items: center;
+  line-height: 1.4;
+}
+
+.info-row .label { font-weight: 700; color: #0f172a; }
+.info-row .colon { font-weight: 700; color: #0f172a; text-align: left; }
+.info-row .value { font-weight: 500; color: #334155; word-break: break-word; }
+
+/* --- TAMPILAN RESPONSIVE KHUSUS LAYAR HP (Mobile Screen < 640px) --- */
+@media screen and (max-width: 640px) {
+  .employee-info-box {
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .info-column {
+    width: 100%;
+    gap: 6px;
+  }
+
+  .info-row {
+    grid-template-columns: 90px 10px 1fr;
+    font-size: 12px;
+  }
+}
+
+/* --- KUNCI CETAK / DOWNLOAD PDF (Wajib Selalu 2 Kolom) --- */
+@media print {
+  .employee-info-box {
+    flex-direction: row !important;
+    justify-content: space-between !important;
+  }
+  .info-column {
+    width: 48% !important;
+  }
+  .info-row {
+    grid-template-columns: 95px 12px 1fr !important;
+  }
 }
 
 /* 2. Ultra-high-visibility custom cursor for Signature Canvas */

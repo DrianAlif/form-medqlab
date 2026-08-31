@@ -7,9 +7,9 @@ export function LemburPreview({ data }) {
   const totalJam = (data.items || []).reduce((acc, item) => acc + (Number(item.jamCount) || 0), 0);
 
   return (
-    <div id="pdf-content" className="w-full flex flex-col items-center">
-      {/* 1 PAGE LANDSCAPE */}
-      <div className="pdf-page-container w-full max-w-[1050px] p-8 text-black font-sans text-[11px] min-h-[640px] flex flex-col justify-between">
+    <div id="pdf-content" className="w-full flex flex-col items-center font-sans">
+      {/* 1 PAGE LANDSCAPE A4 */}
+      <div className="pdf-page-container pdf-page-landscape w-full max-w-[1100px] p-8 text-black text-[11px] min-h-[720px] flex flex-col justify-between">
         <div>
           {/* Top Header */}
           <div className="flex items-center justify-between pb-3 mb-2 border-b border-black">
@@ -105,45 +105,43 @@ export function LemburPreview({ data }) {
             </table>
           </div>
 
-          {/* Employee & Department Metadata Box */}
-          <div className="border border-black p-2 mb-4 bg-white text-[11px] grid grid-cols-2 gap-x-8 gap-y-1.5">
-            <div className="flex items-baseline">
-              <span className="w-20 font-semibold">Nama:</span>
-              <span className="flex-1 border-b border-dotted border-black pb-0.5 font-medium">
-                {data.nama || ''}
-              </span>
-            </div>
-            <div className="flex items-baseline">
-              <span className="w-24 font-semibold">NIK:</span>
-              <span className="flex-1 border-b border-dotted border-black pb-0.5 font-medium">
-                {data.nik || ''}
-              </span>
-            </div>
-
-            <div className="flex items-baseline">
-              <span className="w-20 font-semibold">Jabatan:</span>
-              <span className="flex-1 border-b border-dotted border-black pb-0.5 font-medium">
-                {data.jabatan || ''}
-              </span>
-            </div>
-            <div className="flex items-baseline">
-              <span className="w-24 font-semibold">Department:</span>
-              <span className="flex-1 border-b border-dotted border-black pb-0.5 font-medium">
-                {data.department || ''}
-              </span>
+          {/* Standardized Employee & Department Metadata Box */}
+          <div className="employee-info-box">
+            <div className="info-column">
+              <div className="info-row">
+                <span className="label">Nama</span>
+                <span className="colon">:</span>
+                <span className="value">{data.nama || ''}</span>
+              </div>
+              <div className="info-row">
+                <span className="label">NIK</span>
+                <span className="colon">:</span>
+                <span className="value">{data.nik || ''}</span>
+              </div>
+              <div className="info-row">
+                <span className="label">Jabatan</span>
+                <span className="colon">:</span>
+                <span className="value">{data.jabatan || ''}</span>
+              </div>
             </div>
 
-            <div className="flex items-baseline col-span-2">
-              <span className="w-20 font-semibold">Bulan:</span>
-              <span className="flex-1 border-b border-dotted border-black pb-0.5 font-medium">
-                {data.bulan || ''}
-              </span>
+            <div className="info-column">
+              <div className="info-row">
+                <span className="label">Department</span>
+                <span className="colon">:</span>
+                <span className="value">{data.department || ''}</span>
+              </div>
+              <div className="info-row">
+                <span className="label">Bulan</span>
+                <span className="colon">:</span>
+                <span className="value">{data.bulan || ''}</span>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Multi-tier Approval Block */}
-        <div className="border border-black grid grid-cols-3 divide-x divide-black bg-white">
+        <div className="no-break border border-black grid grid-cols-3 divide-x divide-black bg-white">
           {/* 1. DIBUAT OLEH */}
           <div className="p-2 flex flex-col justify-between text-center min-h-[110px]">
             <div className="font-bold text-[11px] text-left border-b border-slate-200 pb-1">
@@ -158,8 +156,8 @@ export function LemburPreview({ data }) {
                 />
               ) : null}
             </div>
-            <div className="border-t border-dotted border-black pt-1 font-semibold text-[11px]">
-              {data.dibuatOlehNama || data.nama || ''}
+            <div className="w-full border-t border-black pt-1 font-semibold text-[11px]">
+              {data.dibuatOlehNama || data.nama || 'Nama Staff'}
             </div>
           </div>
 
@@ -177,7 +175,7 @@ export function LemburPreview({ data }) {
                 />
               ) : null}
             </div>
-            <div className="border-t border-dotted border-black pt-1 font-semibold text-[11px]">
+            <div className="w-full border-t border-black pt-1 font-semibold text-[11px]">
               {data.disetujuiOlehNama || 'Ferry Lukito'}
             </div>
           </div>
@@ -196,7 +194,7 @@ export function LemburPreview({ data }) {
                 />
               ) : null}
             </div>
-            <div className="border-t border-dotted border-black pt-1 font-semibold text-[11px]">
+            <div className="w-full border-t border-black pt-1 font-semibold text-[11px]">
               {data.diketahuiOlehNama || ''}
             </div>
           </div>

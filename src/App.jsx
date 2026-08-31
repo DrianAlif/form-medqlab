@@ -1,4 +1,4 @@
-import React, { useState, Component } from 'react';
+import React, { useState, Component, useEffect } from 'react';
 import { Header } from './components/Header';
 import { KosanForm, getNormalizedParentCategories } from './forms/KosanForm';
 import { MakanForm } from './forms/MakanForm';
@@ -18,7 +18,7 @@ import {
 } from './utils/sampleData';
 import { exportToPdf } from './utils/pdfExport';
 import { saveDocument } from './api/client';
-import { CheckCircle2, AlertCircle, RefreshCw, ZoomIn, ZoomOut, RotateCcw, Maximize2 } from 'lucide-react';
+import { CheckCircle2, AlertCircle, RefreshCw, ZoomIn, ZoomOut, RotateCcw, Eye, Edit3, Download, Save } from 'lucide-react';
 
 // Error Boundary to prevent any blank screen crash
 class ErrorBoundary extends Component {
@@ -66,14 +66,30 @@ class ErrorBoundary extends Component {
 
 function MainApp() {
   const [activeTab, setActiveTab] = useState('kosan'); // 'kosan', 'makan', 'lembur', 'akomodasi'
+  const [viewMode, setViewMode] = useState('form'); // 'form' | 'preview' (For mobile/tablet < lg)
   
   const [kosanData, setKosanData] = useState(initialKosanData);
   const [makanData, setMakanData] = useState(initialMakanData);
   const [lemburData, setLemburData] = useState(initialLemburData);
   const [akomodasiData, setAkomodasiData] = useState(initialAkomodasiData);
 
-  // Zoom Level for Live PDF Preview (0.5 to 1.5)
+  // Responsive default Zoom Level
   const [zoomLevel, setZoomLevel] = useState(0.85);
+
+  useEffect(() => {
+    // Detect mobile viewport width and set appropriate initial zoom
+    if (typeof window !== 'undefined') {
+      const isMobile = window.innerWidth < 640;
+      const isTablet = window.innerWidth >= 640 && window.innerWidth < 1024;
+      if (isMobile) {
+        setZoomLevel(activeTab === 'lembur' || activeTab === 'akomodasi' ? 0.35 : 0.45);
+      } else if (isTablet) {
+        setZoomLevel(activeTab === 'lembur' || activeTab === 'akomodasi' ? 0.65 : 0.75);
+      } else {
+        setZoomLevel(activeTab === 'lembur' || activeTab === 'akomodasi' ? 0.85 : 0.95);
+      }
+    }
+  }, [activeTab, viewMode]);
 
   // Modal States
   const [sigModal, setSigModal] = useState({
@@ -92,9 +108,14 @@ function MainApp() {
 
   // Zoom Controls
   const handleZoomIn = () => setZoomLevel(prev => Math.min(1.4, Math.round((prev + 0.1) * 10) / 10));
-  const handleZoomOut = () => setZoomLevel(prev => Math.max(0.5, Math.round((prev - 0.1) * 10) / 10));
+  const handleZoomOut = () => setZoomLevel(prev => Math.max(0.3, Math.round((prev - 0.1) * 10) / 10));
   const handleResetZoom = () => setZoomLevel(activeTab === 'lembur' || activeTab === 'akomodasi' ? 0.85 : 0.95);
-  const handleFitPage = () => setZoomLevel(activeTab === 'lembur' || activeTab === 'akomodasi' ? 0.75 : 0.85);
+  const handleFitPage = () => {
+    if (typeof window !== 'undefined') {
+      const isMobile = window.innerWidth < 640;
+      setZoomLevel(isMobile ? (activeTab === 'lembur' || activeTab === 'akomodasi' ? 0.35 : 0.45) : (activeTab === 'lembur' || activeTab === 'akomodasi' ? 0.75 : 0.85));
+    }
+  };
 
   // Open Signature Modal
   const handleOpenSignature = (targetField, title = '') => {
@@ -274,7 +295,11 @@ function MainApp() {
       <div className="shrink-0">
         <Header
           activeTab={activeTab}
-          onTabChange={setActiveTab}
+          onTabChange={(tab) => {
+            setActiveTab(tab);
+          }}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
           onResetSample={handleResetSample}
           onSaveDraft={handleSaveDraft}
           onOpenHistory={() => setIsHistoryOpen(true)}
@@ -284,17 +309,21 @@ function MainApp() {
         />
       </div>
 
-      {/* Main Workspace: Independent Dual-Pane Scrollable Layout */}
-      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
-        {/* Left Column: Form Editor (45% on large screens, Independent Scroll) */}
-        <section className="w-full lg:w-[46%] xl:w-[44%] 2xl:w-[42%] h-full overflow-y-auto bg-slate-50/70 border-r border-slate-200 p-4 sm:p-5 no-print shrink-0">
-          <div className="max-w-2xl mx-auto space-y-4 pb-16">
-            <div className="flex items-center justify-between sticky top-0 bg-slate-50/95 backdrop-blur-xs py-2.5 z-10 border-b border-slate-200 mb-2">
-              <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+      {/* Main Workspace: Independent Dual-Pane Scroll (Desktop) & Responsive Switcher (Mobile/Tablet) */}
+      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0 relative">
+        {/* Left Column: Form Editor (Visible on Desktop OR when viewMode === 'form' on mobile) */}
+        <section
+          className={`w-full lg:w-[46%] xl:w-[44%] 2xl:w-[42%] h-full overflow-y-auto bg-slate-50/70 border-r border-slate-200 p-3 sm:p-5 no-print shrink-0 ${
+            viewMode === 'preview' ? 'hidden lg:block' : 'block'
+          }`}
+        >
+          <div className="max-w-2xl mx-auto space-y-4 pb-24 lg:pb-16">
+            <div className="flex items-center justify-between sticky top-0 bg-slate-50/95 backdrop-blur-xs py-2 z-10 border-b border-slate-200 mb-2">
+              <h2 className="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
                 Editor Data Form
               </h2>
-              <span className="text-[11px] text-slate-500 font-medium">
+              <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
                 Auto-sync ke Preview & D1
               </span>
             </div>
@@ -333,26 +362,30 @@ function MainApp() {
           </div>
         </section>
 
-        {/* Right Column: Live PDF Document Preview (55%, Independent Scroll + Zoom Toolbar) */}
-        <section className="flex-1 h-full overflow-y-auto bg-slate-200/80 flex flex-col relative min-h-0">
+        {/* Right Column: Live PDF Document Preview (Visible on Desktop OR when viewMode === 'preview' on mobile) */}
+        <section
+          className={`flex-1 h-full overflow-y-auto bg-slate-200/80 flex flex-col relative min-h-0 ${
+            viewMode === 'form' ? 'hidden lg:flex' : 'flex'
+          }`}
+        >
           {/* Sticky Preview Header / Toolbar */}
-          <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-2 flex items-center justify-between no-print shadow-xs shrink-0">
-            <div className="flex items-center gap-2.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-xs font-bold text-slate-800">
+          <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-3 sm:px-4 py-2 flex items-center justify-between no-print shadow-xs shrink-0 gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+              <span className="text-xs font-bold text-slate-800 truncate">
                 Live PDF Preview
               </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 font-semibold text-slate-600 border border-slate-200">
+              <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 rounded-full bg-slate-100 font-semibold text-slate-600 border border-slate-200 truncate">
                 {activeTab === 'lembur'
                   ? 'Landscape (1 Halaman)'
                   : activeTab === 'akomodasi'
-                  ? 'Landscape (Multi-Halaman + Lampiran)'
+                  ? 'Landscape (Multi-Halaman)'
                   : 'Portrait (2 Halaman)'}
               </span>
             </div>
 
             {/* Zoom & Viewport Controls */}
-            <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs">
+            <div className="flex items-center gap-1 bg-slate-100 p-0.5 sm:p-1 rounded-lg border border-slate-200 text-xs shrink-0">
               <button
                 type="button"
                 onClick={handleZoomOut}
@@ -361,7 +394,7 @@ function MainApp() {
               >
                 <ZoomOut className="w-3.5 h-3.5" />
               </button>
-              <span className="px-1.5 font-bold text-[11px] text-slate-700 min-w-[42px] text-center">
+              <span className="px-1 font-bold text-[10px] sm:text-[11px] text-slate-700 min-w-[36px] sm:min-w-[42px] text-center">
                 {Math.round(zoomLevel * 100)}%
               </span>
               <button
@@ -375,15 +408,15 @@ function MainApp() {
               <button
                 type="button"
                 onClick={handleFitPage}
-                className="px-2 py-0.5 text-[10px] font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded transition border-l border-slate-200"
-                title="Fit to page width"
+                className="px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded transition border-l border-slate-200"
+                title="Fit to screen"
               >
                 Fit
               </button>
               <button
                 type="button"
                 onClick={handleResetZoom}
-                className="px-2 py-0.5 text-[10px] font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded transition"
+                className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded transition"
                 title="Reset zoom"
               >
                 100%
@@ -392,14 +425,14 @@ function MainApp() {
           </div>
 
           {/* Document Preview Canvas with Smooth Zoom Scaling */}
-          <div className="flex-1 p-4 sm:p-6 flex justify-center items-start overflow-x-auto min-h-0">
+          <div className="flex-1 p-2 sm:p-6 flex justify-center items-start overflow-x-auto min-h-0">
             <div
               style={{
                 transform: `scale(${zoomLevel})`,
                 transformOrigin: 'top center',
                 transition: 'transform 0.15s ease-out'
               }}
-              className="pb-20"
+              className="pb-28 lg:pb-20"
             >
               {activeTab === 'kosan' && <KosanPreview data={kosanData} />}
               {activeTab === 'makan' && <MakanPreview data={makanData} />}
@@ -408,6 +441,51 @@ function MainApp() {
             </div>
           </div>
         </section>
+
+        {/* Mobile / Tablet Floating Action Bar (Sticky Bottom on < lg) */}
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2.5 flex items-center justify-between shadow-lg gap-2 no-print">
+          {viewMode === 'form' ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setViewMode('preview')}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl shadow-sm transition"
+              >
+                <Eye className="w-4 h-4" />
+                <span>Lihat Preview PDF</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                disabled={isExporting}
+                className="flex items-center justify-center gap-1.5 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm transition disabled:opacity-50"
+              >
+                <Download className="w-4 h-4" />
+                <span>{isExporting ? 'Proses...' : 'Download'}</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setViewMode('form')}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm transition"
+              >
+                <Edit3 className="w-4 h-4" />
+                <span>Kembali ke Edit Form</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                disabled={isExporting}
+                className="flex items-center justify-center gap-1.5 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition disabled:opacity-50"
+              >
+                <Download className="w-4 h-4" />
+                <span>{isExporting ? 'Proses...' : 'Download PDF'}</span>
+              </button>
+            </>
+          )}
+        </div>
       </main>
 
       {/* Signature Modal */}

@@ -51,33 +51,42 @@ export function AkomodasiPreview({ data }) {
             </div>
           </div>
 
-          {/* Employee & Project Metadata Box */}
-          <div className="border border-black p-2.5 mb-3 bg-white text-[10px] grid grid-cols-2 gap-x-8 gap-y-1">
-            <div className="flex items-baseline">
-              <span className="w-24 font-bold">Nama</span>
-              <span className="flex-1">: {data.nama || ''}</span>
-            </div>
-            <div className="flex items-baseline">
-              <span className="w-24 font-bold">Department</span>
-              <span className="flex-1">: {data.department || ''}</span>
+          {/* Standardized Employee & Project Metadata Box */}
+          <div className="employee-info-box">
+            <div className="info-column">
+              <div className="info-row">
+                <span className="label">Nama</span>
+                <span className="colon">:</span>
+                <span className="value">{data.nama || ''}</span>
+              </div>
+              <div className="info-row">
+                <span className="label">NIK</span>
+                <span className="colon">:</span>
+                <span className="value">{data.nik || ''}</span>
+              </div>
+              <div className="info-row">
+                <span className="label">Jabatan</span>
+                <span className="colon">:</span>
+                <span className="value">{data.jabatan || ''}</span>
+              </div>
             </div>
 
-            <div className="flex items-baseline">
-              <span className="w-24 font-bold">NIK</span>
-              <span className="flex-1">: {data.nik || ''}</span>
-            </div>
-            <div className="flex items-baseline">
-              <span className="w-24 font-bold">Customer</span>
-              <span className="flex-1">: {data.customer || ''}</span>
-            </div>
-
-            <div className="flex items-baseline">
-              <span className="w-24 font-bold">Jabatan</span>
-              <span className="flex-1">: {data.jabatan || ''}</span>
-            </div>
-            <div className="flex items-baseline">
-              <span className="w-24 font-bold">Periode</span>
-              <span className="flex-1">: {data.periode || ''}</span>
+            <div className="info-column">
+              <div className="info-row">
+                <span className="label">Department</span>
+                <span className="colon">:</span>
+                <span className="value">{data.department || ''}</span>
+              </div>
+              <div className="info-row">
+                <span className="label">Customer</span>
+                <span className="colon">:</span>
+                <span className="value">{data.customer || ''}</span>
+              </div>
+              <div className="info-row">
+                <span className="label">Periode</span>
+                <span className="colon">:</span>
+                <span className="value">{data.periode || ''}</span>
+              </div>
             </div>
           </div>
 
