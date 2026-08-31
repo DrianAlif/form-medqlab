@@ -7,7 +7,7 @@
     height: 100%;
     margin: 0;
     padding: 0;
-    font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
 
@@ -19,8 +19,8 @@
 
   /* 1. High-contrast, highly visible cursor & caret in all input fields */
   input, textarea, select {
-    caret-color: #0284c7 !important; /* Vivid Blue insertion cursor */
-    color: #0f172a !important; /* Dark solid text */
+    caret-color: #0284c7 !important;
+    color: #0f172a !important;
     cursor: text !important;
   }
 
@@ -60,45 +60,56 @@
 }
 
 /* ==========================================
-   A. KELAS SHEET HALAMAN DOKUMEN
+   A. KELAS SHEET HALAMAN DOKUMEN (A4 1:1.414)
    ========================================== */
 .pdf-sheet {
   background-color: #ffffff;
   color: #000000;
   box-sizing: border-box;
   position: relative;
+  overflow: hidden;
 }
 
-/* Portrait A4 Sheet (Kosan & Makan) */
+/* Portrait A4 Sheet (Kosan & Makan) - 794px x 1123px */
 .pdf-page-portrait {
-  width: 800px;
-  max-width: 800px;
-  min-height: 520px;
+  width: 794px;
+  min-height: 1123px;
+  max-width: 794px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 30px;
   box-sizing: border-box;
   background: #ffffff;
   position: relative;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
-/* Landscape A4 Sheet (Lembur & Akomodasi) */
+/* Landscape A4 Sheet (Lembur & Akomodasi) - 1122px x 794px */
 .pdf-page-landscape {
-  width: 1080px;
-  max-width: 1080px;
-  min-height: 520px;
+  width: 1122px;
+  min-height: 794px;
+  max-width: 1122px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 24px 30px;
   box-sizing: border-box;
   background: #ffffff;
   position: relative;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 /* Page inner flex wrapper */
 .page-inner-content {
   width: 100%;
+  height: 100%;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 /* --- TAMPILAN DEFAULT / EXPORT PDF (Tetap 2 Kolom Presisi) --- */
@@ -108,26 +119,26 @@
   width: 100%;
   border: 1.5px solid #1e293b;
   border-radius: 6px;
-  padding: 8px 16px;
+  padding: 10px 18px;
   margin: 8px 0 12px 0;
   background-color: #ffffff;
   box-sizing: border-box;
-  font-family: 'Inter', Arial, sans-serif;
-  font-size: 9.5pt;
+  font-family: inherit;
+  font-size: 10pt;
 }
 
 .info-column {
   width: 48%;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
 }
 
 .info-row {
   display: grid;
-  grid-template-columns: 95px 12px 1fr;
+  grid-template-columns: 100px 14px 1fr;
   align-items: center;
-  line-height: 1.35;
+  line-height: 1.4;
 }
 
 .info-row .label { font-weight: 700; color: #0f172a; }
@@ -161,8 +172,8 @@
 /* Anti-distortion image attachment styling */
 .attachment-img {
   width: 100%;
-  height: 320px;
-  object-fit: contain !important; /* Mencegah gambar struk tertarik / gepeng */
+  height: 240px;
+  object-fit: contain !important;
   background-color: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
@@ -221,12 +232,14 @@
   .pdf-page-portrait {
     width: 100% !important;
     max-width: 100% !important;
+    min-height: 0 !important;
     padding: 10mm 12mm !important;
   }
 
   .pdf-page-landscape {
     width: 100% !important;
     max-width: 100% !important;
+    min-height: 0 !important;
     padding: 8mm 10mm !important;
   }
 
@@ -238,7 +251,7 @@
     width: 48% !important;
   }
   .info-row {
-    grid-template-columns: 95px 12px 1fr !important;
+    grid-template-columns: 100px 14px 1fr !important;
   }
 }
 
