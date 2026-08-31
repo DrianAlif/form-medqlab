@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  }
+
+  /* 1. High-contrast, highly visible cursor & caret in all input fields */
+  input, textarea, select {
+    caret-color: #0284c7 !important; /* Vivid Blue insertion cursor */
+    color: #0f172a !important; /* Dark solid text */
+    cursor: text !important;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    caret-color: #0284c7 !important;
+  }
+
+  select, input[type="checkbox"], input[type="radio"], input[type="date"], button {
+    cursor: pointer !important;
+  }
+}
+
+/* Handwritten style for simulated signatures */
+.font-signature {
+  font-family: 'Caveat', 'Brush Script MT', cursive;
+}
+
+/* Paper / PDF Page Styles */
+.pdf-page-container {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  background-color: #ffffff;
+  color: #000000;
+}
+
+/* 2. Ultra-high-visibility custom cursor for Signature Canvas */
+.signature-canvas-cursor {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Ccircle cx='14' cy='14' r='4.5' fill='%230284c7' stroke='%23000000' stroke-width='1.5'/%3E%3Ccircle cx='14' cy='14' r='1.5' fill='%23ffffff'/%3E%3Cline x1='14' y1='2' x2='14' y2='8' stroke='%23000000' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='14' y1='20' x2='14' y2='26' stroke='%23000000' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='2' y1='14' x2='8' y2='14' stroke='%23000000' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='20' y1='14' x2='26' y2='14' stroke='%23000000' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") 14 14, crosshair !important;
+}
+
+/* Page break marker for multi-page PDF generation */
+.html2pdf__page-break {
+  page-break-before: always;
+  break-before: page;
+}
+
+/* Print styling */
+@media print {
+  body {
+    background: transparent !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+  
+  .pdf-page-container {
+    box-shadow: none !important;
+    margin: 0 !important;
+    width: 100% !important;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  @page {
+    size: auto;
+    margin: 0mm;
+  }
+}
