@@ -16,7 +16,7 @@ import {
   initialLemburData,
   initialAkomodasiData
 } from './utils/sampleData';
-import { exportToPdf } from './utils/pdfExport';
+import { handleDownloadPDF, handlePrintDocument } from './utils/pdfExport';
 import { saveDocument } from './api/client';
 import { CheckCircle2, AlertCircle, RefreshCw, ZoomIn, ZoomOut, RotateCcw, Eye, Edit3, Download, Save } from 'lucide-react';
 
@@ -241,7 +241,7 @@ function MainApp() {
     showToast(`Dokumen "${doc.title || 'Draft'}" berhasil dimuat!`);
   };
 
-  // Export PDF
+  // Export PDF with Multi-Page Sequential Canvas Engine
   const handleDownloadPdf = async () => {
     setIsExporting(true);
     let filename = 'dokumen.pdf';
@@ -262,7 +262,11 @@ function MainApp() {
     }
 
     try {
-      await exportToPdf('pdf-content', filename, orientation);
+      await handleDownloadPDF({
+        containerId: 'pdf-export-container',
+        orientation,
+        filename
+      });
       showToast('PDF berhasil di-download!');
     } catch (e) {
       console.error(e);
@@ -272,9 +276,10 @@ function MainApp() {
     }
   };
 
-  // Native Print
+  // Browser Print with Auto-Orientation Lock
   const handlePrint = () => {
-    window.print();
+    const orientation = (activeTab === 'lembur' || activeTab === 'akomodasi') ? 'landscape' : 'portrait';
+    handlePrintDocument(orientation);
   };
 
   return (

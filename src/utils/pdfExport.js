@@ -1,51 +1,83 @@
-/**
- * Master PDF Export Engine using html2pdf.js + html2canvas + jsPDF
- * Calibrated for high-DPI rendering, anti-distortion image scaling, and precise page breaks.
- */
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
-export async function exportToPdf(elementId, filename = 'document.pdf', orientation = 'portrait') {
-  const element = document.getElementById(elementId);
-  if (!element) {
-    console.error(`Element with id ${elementId} not found`);
-    return;
+/**
+ * High-Precision Multi-Page Sequential Canvas PDF Renderer (jsPDF + html2canvas)
+ * Renders each A4 page container individually to guarantee 100% precision, zero vertical slicing, and exact (0,0) placement.
+ */
+export async function handleDownloadPDF({
+  containerId = 'pdf-export-container',
+  orientation = 'portrait', // 'portrait' | 'landscape'
+  filename = 'Dokumen_Applimetis.pdf'
+}) {
+  const container = document.getElementById(containerId);
+  if (!container) {
+    console.error(`Container with id "${containerId}" not found`);
+    return false;
   }
 
-  // Dynamically load html2pdf if not already loaded
-  const html2pdf = (await import('html2pdf.js')).default;
+  // Find all page sheets in container
+  const targetSelector = orientation === 'portrait'
+    ? '.pdf-page-portrait, .pdf-page-container'
+    : '.pdf-page-landscape, .pdf-page-container';
+  
+  let pages = Array.from(container.querySelectorAll(targetSelector));
 
-  const opt = {
-    margin: [0, 0, 0, 0],
-    filename: filename,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: {
-      scale: 2.8, // 300 DPI high-definition capture
+  // If no child pages found, use the container itself
+  if (pages.length === 0) {
+    pages = [container];
+  }
+
+  const pdf = new jsPDF({
+    orientation: orientation,
+    unit: 'mm',
+    format: 'a4',
+    compress: true
+  });
+
+  const pdfWidth = orientation === 'portrait' ? 210 : 297;
+  const pdfHeight = orientation === 'portrait' ? 297 : 210;
+
+  for (let i = 0; i < pages.length; i++) {
+    const pageElement = pages[i];
+
+    const canvas = await html2canvas(pageElement, {
+      scale: 2.5, // 300 DPI crisp output
       useCORS: true,
       allowTaint: true,
       logging: false,
-      letterRendering: true,
-      scrollY: 0,
-      windowWidth: orientation === 'landscape' ? 1280 : 960
-    },
-    jsPDF: {
-      unit: 'mm',
-      format: 'a4',
-      orientation: orientation, // 'portrait' or 'landscape'
-      compress: true
-    },
-    pagebreak: {
-      mode: ['css', 'legacy'],
-      before: ['.html2pdf__page-break', '.page-break'],
-      avoid: ['.no-break', '.signature-section', 'tr']
-    }
-  };
+      backgroundColor: '#ffffff'
+    });
 
-  try {
-    await html2pdf().set(opt).from(element).save();
-    return true;
-  } catch (error) {
-    console.error('PDF export failed:', error);
-    // Fallback to native print dialog
-    window.print();
-    return false;
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+    if (i > 0) {
+      pdf.addPage('a4', orientation);
+    }
+
+    // Lock image exactly to sheet bounds (0, 0, pdfWidth, pdfHeight)
+    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
   }
+
+  pdf.save(filename);
+  return true;
+}
+
+/**
+ * Browser Native Print Trigger with Auto-Orientation Lock
+ */
+export function handlePrintDocument(orientation = 'portrait') {
+  document.body.setAttribute('data-form-orientation', orientation);
+  window.print();
+}
+
+/**
+ * Backward compatibility alias
+ */
+export async function exportToPdf(elementId, filename = 'document.pdf', orientation = 'portrait') {
+  return await handleDownloadPDF({
+    containerId: elementId,
+    filename: filename,
+    orientation: orientation
+  });
 }
