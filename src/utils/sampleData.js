@@ -1,11 +1,11 @@
 /**
  * Default sample data pre-populated to match exact template specifications
  */
-import { TTD_ALIF_B64, TTD_TRI_B64 } from './signaturesData';
+import { TTD_ALIF_B64, TTD_TRI_B64, TTD_IKHSAN_B64 } from './signaturesData';
 
 export const SAMPLE_SIGNATURE_ALIF = TTD_ALIF_B64;
 export const SAMPLE_SIGNATURE_TRI = TTD_TRI_B64;
-export const SAMPLE_SIGNATURE_IKHSAN = TTD_ALIF_B64;
+export const SAMPLE_SIGNATURE_IKHSAN = TTD_IKHSAN_B64;
 export const SAMPLE_SIGNATURE_FERRY = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 80' width='180' height='80'><path d='M20,50 Q40,10 70,30 T110,40 Q130,20 160,35 M30,55 Q60,65 140,45' stroke='%23000' stroke-width='3' fill='none' stroke-linecap='round'/></svg>";
 
 export const initialKosanData = {

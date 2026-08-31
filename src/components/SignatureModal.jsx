@@ -7,30 +7,30 @@ import {
   SAMPLE_SIGNATURE_FERRY
 } from '../utils/sampleData';
 
-const PRESET_SIGNATURES = [
+const signaturePresets = [
   {
-    id: 'alif',
-    name: 'Alif Drian (Pemohon)',
-    role: 'Pemohon',
-    dataUrl: SAMPLE_SIGNATURE_ALIF
+    id: "ttd-alif",
+    name: "Alif Drian (Pemohon)",
+    role: "Pemohon",
+    dataUrl: SAMPLE_SIGNATURE_ALIF,
   },
   {
-    id: 'tri',
-    name: 'Tri Achmadi (Pemohon / Terkait)',
-    role: 'Pemohon / Terkait',
-    dataUrl: SAMPLE_SIGNATURE_TRI
+    id: "ttd-tri",
+    name: "Tri Achmadi Priyambodo",
+    role: "Pemohon / Terkait",
+    dataUrl: SAMPLE_SIGNATURE_TRI,
   },
   {
-    id: 'ikhsan',
-    name: 'Ikhsan',
-    role: 'Tim Proyek',
-    dataUrl: SAMPLE_SIGNATURE_IKHSAN
+    id: "ttd-ikhsan",
+    name: "Ikhsan Akbar Aryandi",
+    role: "Pemohon / Terkait",
+    dataUrl: SAMPLE_SIGNATURE_IKHSAN,
   },
   {
-    id: 'ferry',
-    name: 'Ferry Lukito (HOD)',
-    role: 'HOD',
-    dataUrl: SAMPLE_SIGNATURE_FERRY
+    id: "ttd-ferry",
+    name: "Ferry Lukito (HOD)",
+    role: "HOD",
+    dataUrl: SAMPLE_SIGNATURE_FERRY,
   }
 ];
 
@@ -258,7 +258,7 @@ export function SignatureModal({ isOpen, onClose, onSave, targetTitle }) {
                 Pilih tanda tangan resmi template yang sudah disiapkan:
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {PRESET_SIGNATURES.map((preset) => {
+                {signaturePresets.map((preset) => {
                   const isSelected = selectedPresetId === preset.id;
                   return (
                     <div
