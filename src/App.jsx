@@ -18,7 +18,7 @@ import {
 } from './utils/sampleData';
 import { exportToPdf } from './utils/pdfExport';
 import { saveDocument } from './api/client';
-import { CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { CheckCircle2, AlertCircle, RefreshCw, ZoomIn, ZoomOut, RotateCcw, Maximize2 } from 'lucide-react';
 
 // Error Boundary to prevent any blank screen crash
 class ErrorBoundary extends Component {
@@ -72,6 +72,9 @@ function MainApp() {
   const [lemburData, setLemburData] = useState(initialLemburData);
   const [akomodasiData, setAkomodasiData] = useState(initialAkomodasiData);
 
+  // Zoom Level for Live PDF Preview (0.5 to 1.5)
+  const [zoomLevel, setZoomLevel] = useState(0.85);
+
   // Modal States
   const [sigModal, setSigModal] = useState({
     isOpen: false,
@@ -86,6 +89,12 @@ function MainApp() {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3500);
   };
+
+  // Zoom Controls
+  const handleZoomIn = () => setZoomLevel(prev => Math.min(1.4, Math.round((prev + 0.1) * 10) / 10));
+  const handleZoomOut = () => setZoomLevel(prev => Math.max(0.5, Math.round((prev - 0.1) * 10) / 10));
+  const handleResetZoom = () => setZoomLevel(activeTab === 'lembur' || activeTab === 'akomodasi' ? 0.85 : 0.95);
+  const handleFitPage = () => setZoomLevel(activeTab === 'lembur' || activeTab === 'akomodasi' ? 0.75 : 0.85);
 
   // Open Signature Modal
   const handleOpenSignature = (targetField, title = '') => {
@@ -248,7 +257,7 @@ function MainApp() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-100 font-sans">
+    <div className="h-screen w-screen flex flex-col overflow-hidden bg-slate-100 font-sans">
       {/* Toast Notification */}
       {toast && (
         <div className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg bg-slate-900 text-white text-xs font-medium animate-bounce">
@@ -261,29 +270,32 @@ function MainApp() {
         </div>
       )}
 
-      {/* Top Header */}
-      <Header
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        onResetSample={handleResetSample}
-        onSaveDraft={handleSaveDraft}
-        onOpenHistory={() => setIsHistoryOpen(true)}
-        onDownloadPdf={handleDownloadPdf}
-        onPrint={handlePrint}
-        isExporting={isExporting}
-      />
+      {/* Top Header (Fixed Height, non-scrollable) */}
+      <div className="shrink-0">
+        <Header
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          onResetSample={handleResetSample}
+          onSaveDraft={handleSaveDraft}
+          onOpenHistory={() => setIsHistoryOpen(true)}
+          onDownloadPdf={handleDownloadPdf}
+          onPrint={handlePrint}
+          isExporting={isExporting}
+        />
+      </div>
 
-      {/* Main Workspace: Split Screen Editor & Live Preview */}
-      <main className="flex-1 max-w-[1700px] w-full mx-auto p-4 sm:p-6 grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Form Editor (5 cols on xl) */}
-        <section className="xl:col-span-5 no-print">
-          <div className="sticky top-28 space-y-4 max-h-[calc(100vh-140px)] overflow-y-auto pr-1">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+      {/* Main Workspace: Independent Dual-Pane Scrollable Layout */}
+      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
+        {/* Left Column: Form Editor (45% on large screens, Independent Scroll) */}
+        <section className="w-full lg:w-[46%] xl:w-[44%] 2xl:w-[42%] h-full overflow-y-auto bg-slate-50/70 border-r border-slate-200 p-4 sm:p-5 no-print shrink-0">
+          <div className="max-w-2xl mx-auto space-y-4 pb-16">
+            <div className="flex items-center justify-between sticky top-0 bg-slate-50/95 backdrop-blur-xs py-2.5 z-10 border-b border-slate-200 mb-2">
+              <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
                 Editor Data Form
               </h2>
-              <span className="text-[11px] text-slate-500">
-                Perubahan tersinkron otomatis secara instan
+              <span className="text-[11px] text-slate-500 font-medium">
+                Auto-sync ke Preview & D1
               </span>
             </div>
 
@@ -321,30 +333,79 @@ function MainApp() {
           </div>
         </section>
 
-        {/* Right Column: Live PDF Document Preview (7 cols on xl) */}
-        <section className="xl:col-span-7 flex flex-col items-center">
-          <div className="w-full mb-3 flex items-center justify-between no-print px-2">
-            <div className="flex items-center gap-2">
+        {/* Right Column: Live PDF Document Preview (55%, Independent Scroll + Zoom Toolbar) */}
+        <section className="flex-1 h-full overflow-y-auto bg-slate-200/80 flex flex-col relative min-h-0">
+          {/* Sticky Preview Header / Toolbar */}
+          <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-2 flex items-center justify-between no-print shadow-xs shrink-0">
+            <div className="flex items-center gap-2.5">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-xs font-bold text-slate-700">
-                Live PDF Preview (Ukuran Asli Sesuai Template)
+              <span className="text-xs font-bold text-slate-800">
+                Live PDF Preview
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 font-semibold text-slate-600 border border-slate-200">
+                {activeTab === 'lembur'
+                  ? 'Landscape (1 Halaman)'
+                  : activeTab === 'akomodasi'
+                  ? 'Landscape (Multi-Halaman + Lampiran)'
+                  : 'Portrait (2 Halaman)'}
               </span>
             </div>
-            <span className="text-[11px] text-slate-400">
-              {activeTab === 'lembur'
-                ? 'Format Landscape A4 (1 Halaman)'
-                : activeTab === 'akomodasi'
-                ? 'Format Landscape A4 (Multi-Halaman + Lampiran)'
-                : 'Format 2 Halaman (Voucher + Rincian)'}
-            </span>
+
+            {/* Zoom & Viewport Controls */}
+            <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs">
+              <button
+                type="button"
+                onClick={handleZoomOut}
+                className="p-1 text-slate-600 hover:text-slate-900 rounded hover:bg-slate-200 transition"
+                title="Zoom Out (-)"
+              >
+                <ZoomOut className="w-3.5 h-3.5" />
+              </button>
+              <span className="px-1.5 font-bold text-[11px] text-slate-700 min-w-[42px] text-center">
+                {Math.round(zoomLevel * 100)}%
+              </span>
+              <button
+                type="button"
+                onClick={handleZoomIn}
+                className="p-1 text-slate-600 hover:text-slate-900 rounded hover:bg-slate-200 transition"
+                title="Zoom In (+)"
+              >
+                <ZoomIn className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={handleFitPage}
+                className="px-2 py-0.5 text-[10px] font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded transition border-l border-slate-200"
+                title="Fit to page width"
+              >
+                Fit
+              </button>
+              <button
+                type="button"
+                onClick={handleResetZoom}
+                className="px-2 py-0.5 text-[10px] font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded transition"
+                title="Reset zoom"
+              >
+                100%
+              </button>
+            </div>
           </div>
 
-          {/* Render Active Template Preview */}
-          <div className="w-full flex justify-center overflow-x-auto pb-12">
-            {activeTab === 'kosan' && <KosanPreview data={kosanData} />}
-            {activeTab === 'makan' && <MakanPreview data={makanData} />}
-            {activeTab === 'lembur' && <LemburPreview data={lemburData} />}
-            {activeTab === 'akomodasi' && <AkomodasiPreview data={akomodasiData} />}
+          {/* Document Preview Canvas with Smooth Zoom Scaling */}
+          <div className="flex-1 p-4 sm:p-6 flex justify-center items-start overflow-x-auto min-h-0">
+            <div
+              style={{
+                transform: `scale(${zoomLevel})`,
+                transformOrigin: 'top center',
+                transition: 'transform 0.15s ease-out'
+              }}
+              className="pb-20"
+            >
+              {activeTab === 'kosan' && <KosanPreview data={kosanData} />}
+              {activeTab === 'makan' && <MakanPreview data={makanData} />}
+              {activeTab === 'lembur' && <LemburPreview data={lemburData} />}
+              {activeTab === 'akomodasi' && <AkomodasiPreview data={akomodasiData} />}
+            </div>
           </div>
         </section>
       </main>

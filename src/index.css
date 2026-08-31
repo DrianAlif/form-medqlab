@@ -3,7 +3,11 @@
 @tailwind utilities;
 
 @layer base {
-  body {
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
   }
 
@@ -21,6 +25,22 @@
   select, input[type="checkbox"], input[type="radio"], input[type="date"], button {
     cursor: pointer !important;
   }
+}
+
+/* Custom smooth thin scrollbars for editor and preview panes */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 /* Handwritten style for simulated signatures */
@@ -52,6 +72,7 @@
     background: transparent !important;
     margin: 0 !important;
     padding: 0 !important;
+    overflow: visible !important;
   }
   
   .no-print {
