@@ -1,9 +1,11 @@
 /**
  * Default sample data pre-populated to match exact template specifications
  */
+import { TTD_ALIF_B64, TTD_TRI_B64 } from './signaturesData';
 
-export const SAMPLE_SIGNATURE_ALIF = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 80' width='160' height='80'><path d='M30,65 L60,15 L90,65 M40,45 L80,45 M90,30 L110,65 L140,25' stroke='%23000' stroke-width='3.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>";
-
+export const SAMPLE_SIGNATURE_ALIF = TTD_ALIF_B64;
+export const SAMPLE_SIGNATURE_TRI = TTD_TRI_B64;
+export const SAMPLE_SIGNATURE_IKHSAN = TTD_ALIF_B64;
 export const SAMPLE_SIGNATURE_FERRY = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 80' width='180' height='80'><path d='M20,50 Q40,10 70,30 T110,40 Q130,20 160,35 M30,55 Q60,65 140,45' stroke='%23000' stroke-width='3' fill='none' stroke-linecap='round'/></svg>";
 
 export const initialKosanData = {
@@ -106,7 +108,7 @@ export const initialMakanData = {
       qty: 30,
       unit: 'Hari',
       hargaSatuan: 50000,
-      ttd: SAMPLE_SIGNATURE_FERRY
+      ttd: SAMPLE_SIGNATURE_TRI
     },
     {
       id: 'm-2',
@@ -126,7 +128,7 @@ export const initialMakanData = {
       qty: 30,
       unit: 'Hari',
       hargaSatuan: 50000,
-      ttd: SAMPLE_SIGNATURE_ALIF
+      ttd: SAMPLE_SIGNATURE_IKHSAN
     }
   ]
 };

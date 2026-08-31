@@ -1,6 +1,38 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { X, Eraser, Check, Upload, Sparkles, PenTool } from 'lucide-react';
-import { SAMPLE_SIGNATURE_ALIF, SAMPLE_SIGNATURE_FERRY } from '../utils/sampleData';
+import { X, Eraser, Check, Upload, Sparkles, PenTool, CheckCircle2 } from 'lucide-react';
+import {
+  SAMPLE_SIGNATURE_ALIF,
+  SAMPLE_SIGNATURE_TRI,
+  SAMPLE_SIGNATURE_IKHSAN,
+  SAMPLE_SIGNATURE_FERRY
+} from '../utils/sampleData';
+
+const PRESET_SIGNATURES = [
+  {
+    id: 'alif',
+    name: 'Alif Drian (Pemohon)',
+    role: 'Pemohon',
+    dataUrl: SAMPLE_SIGNATURE_ALIF
+  },
+  {
+    id: 'tri',
+    name: 'Tri Achmadi (Pemohon / Terkait)',
+    role: 'Pemohon / Terkait',
+    dataUrl: SAMPLE_SIGNATURE_TRI
+  },
+  {
+    id: 'ikhsan',
+    name: 'Ikhsan',
+    role: 'Tim Proyek',
+    dataUrl: SAMPLE_SIGNATURE_IKHSAN
+  },
+  {
+    id: 'ferry',
+    name: 'Ferry Lukito (HOD)',
+    role: 'HOD',
+    dataUrl: SAMPLE_SIGNATURE_FERRY
+  }
+];
 
 export function SignatureModal({ isOpen, onClose, onSave, targetTitle }) {
   const canvasRef = useRef(null);
@@ -8,6 +40,7 @@ export function SignatureModal({ isOpen, onClose, onSave, targetTitle }) {
   const [hasDrawn, setHasDrawn] = useState(false);
   const [activeTab, setActiveTab] = useState('draw'); // 'draw', 'presets', 'upload'
   const [mousePos, setMousePos] = useState(null);
+  const [selectedPresetId, setSelectedPresetId] = useState(null);
 
   useEffect(() => {
     if (isOpen && activeTab === 'draw') {
@@ -82,8 +115,9 @@ export function SignatureModal({ isOpen, onClose, onSave, targetTitle }) {
     onClose();
   };
 
-  const handleSelectPreset = (dataUrl) => {
-    onSave(dataUrl);
+  const handleSelectPreset = (preset) => {
+    setSelectedPresetId(preset.id);
+    onSave(preset.dataUrl);
     onClose();
   };
 
@@ -160,7 +194,7 @@ export function SignatureModal({ isOpen, onClose, onSave, targetTitle }) {
         </div>
 
         {/* Content */}
-        <div className="p-5 flex-1 flex flex-col items-center">
+        <div className="p-5 flex-1 flex flex-col items-center max-h-[70vh] overflow-y-auto">
           {activeTab === 'draw' && (
             <div className="w-full flex flex-col items-center space-y-3">
               <div className="w-full border-2 border-slate-300 rounded-xl overflow-hidden bg-slate-50 relative signature-canvas-cursor">
@@ -220,35 +254,45 @@ export function SignatureModal({ isOpen, onClose, onSave, targetTitle }) {
 
           {activeTab === 'presets' && (
             <div className="w-full space-y-3">
-              <div className="text-xs text-slate-600 mb-2">
+              <div className="text-xs text-slate-600 mb-1 font-medium">
                 Pilih tanda tangan resmi template yang sudah disiapkan:
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                {/* Preset 1: Alif */}
-                <div
-                  onClick={() => handleSelectPreset(SAMPLE_SIGNATURE_ALIF)}
-                  className="p-3 border border-slate-200 hover:border-blue-500 rounded-xl bg-slate-50 hover:bg-blue-50/50 cursor-pointer flex flex-col items-center justify-between transition group"
-                >
-                  <div className="h-16 flex items-center justify-center">
-                    <img src={SAMPLE_SIGNATURE_ALIF} alt="Sign Alif" className="max-h-12" />
-                  </div>
-                  <span className="text-xs font-semibold text-slate-700 group-hover:text-blue-600">
-                    Alif Drian (Pemohon)
-                  </span>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {PRESET_SIGNATURES.map((preset) => {
+                  const isSelected = selectedPresetId === preset.id;
+                  return (
+                    <div
+                      key={preset.id}
+                      onClick={() => handleSelectPreset(preset)}
+                      className={`p-3.5 border-2 rounded-xl bg-white hover:bg-blue-50/40 cursor-pointer flex flex-col items-center justify-between transition-all duration-200 group shadow-xs ${
+                        isSelected
+                          ? 'border-blue-600 bg-blue-50/50 ring-2 ring-blue-200'
+                          : 'border-slate-200 hover:border-blue-500 hover:shadow-md'
+                      }`}
+                    >
+                      {/* Image Preview Box */}
+                      <div className="h-20 w-full flex items-center justify-center bg-slate-50 rounded-lg p-2 group-hover:bg-white transition border border-slate-100 relative">
+                        <img
+                          src={preset.dataUrl}
+                          alt={preset.name}
+                          className="max-h-16 max-w-full object-contain filter drop-shadow-xs"
+                        />
+                        {isSelected && (
+                          <div className="absolute top-1.5 right-1.5 text-blue-600">
+                            <CheckCircle2 className="w-4 h-4 fill-blue-600 text-white" />
+                          </div>
+                        )}
+                      </div>
 
-                {/* Preset 2: Ferry */}
-                <div
-                  onClick={() => handleSelectPreset(SAMPLE_SIGNATURE_FERRY)}
-                  className="p-3 border border-slate-200 hover:border-blue-500 rounded-xl bg-slate-50 hover:bg-blue-50/50 cursor-pointer flex flex-col items-center justify-between transition group"
-                >
-                  <div className="h-16 flex items-center justify-center">
-                    <img src={SAMPLE_SIGNATURE_FERRY} alt="Sign Ferry" className="max-h-12" />
-                  </div>
-                  <span className="text-xs font-semibold text-slate-700 group-hover:text-blue-600">
-                    Ferry Lukito (HOD)
-                  </span>
-                </div>
+                      {/* Label & Role */}
+                      <div className="mt-2 text-center w-full">
+                        <span className="text-xs font-bold text-slate-800 group-hover:text-blue-600 block truncate">
+                          {preset.name}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
