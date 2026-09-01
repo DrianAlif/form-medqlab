@@ -6,7 +6,6 @@ import { TTD_ALIF_B64, TTD_TRI_B64, TTD_IKHSAN_B64 } from './signaturesData';
 export const SAMPLE_SIGNATURE_ALIF = TTD_ALIF_B64;
 export const SAMPLE_SIGNATURE_TRI = TTD_TRI_B64;
 export const SAMPLE_SIGNATURE_IKHSAN = TTD_IKHSAN_B64;
-export const SAMPLE_SIGNATURE_FERRY = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 80' width='180' height='80'><path d='M20,50 Q40,10 70,30 T110,40 Q130,20 160,35 M30,55 Q60,65 140,45' stroke='%23000' stroke-width='3' fill='none' stroke-linecap='round'/></svg>";
 export const SAMPLE_SIGNATURE_PRAHMAD = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 80' width='160' height='80'><path d='M20,55 Q30,20 40,38 T55,22 Q65,65 75,25 T90,52 M25,60 L135,60' stroke='%23000' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>";
 
 export const initialKosanData = {
@@ -17,9 +16,9 @@ export const initialKosanData = {
   pemohonNama: 'Alif Drian',
   pemohonRole: 'Pemohon',
   pemohonSign: SAMPLE_SIGNATURE_ALIF,
-  hodNama: 'Ferry Lukito',
+  hodNama: '',
   hodRole: 'HOD',
-  hodSign: SAMPLE_SIGNATURE_FERRY,
+  hodSign: '',
   direkturNama: '',
   direkturRole: 'Direktur',
   direkturSign: '',
@@ -86,9 +85,9 @@ export const initialMakanData = {
   pemohonNama: 'Alif Drian',
   pemohonRole: 'Pemohon',
   pemohonSign: SAMPLE_SIGNATURE_ALIF,
-  hodNama: 'Ferry Lukito',
+  hodNama: '',
   hodRole: 'HOD',
-  hodSign: SAMPLE_SIGNATURE_FERRY,
+  hodSign: '',
   direkturNama: '',
   direkturRole: 'Direktur',
   direkturSign: '',
@@ -143,23 +142,23 @@ export const initialLemburData = {
 
   dibuatOlehNama: 'Alif',
   dibuatOlehSign: SAMPLE_SIGNATURE_ALIF,
-  disetujuiOlehNama: 'Ferry Lukito',
-  disetujuiOlehSign: SAMPLE_SIGNATURE_FERRY,
+  disetujuiOlehNama: '',
+  disetujuiOlehSign: '',
   diketahuiOlehNama: '',
   diketahuiOlehSign: '',
 
   items: [
-    { id: 'l-1', tanggal: '18/07/2026', hari: 'Sabtu', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: true },
-    { id: 'l-2', tanggal: '19/07/2026', hari: 'Minggu', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: true },
-    { id: 'l-3', tanggal: '25/07/2026', hari: 'Sabtu', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: true },
-    { id: 'l-4', tanggal: '26/07/2026', hari: 'Minggu', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: true },
-    { id: 'l-5', tanggal: '01/08/2026', hari: 'Sabtu', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: true },
-    { id: 'l-6', tanggal: '02/08/2026', hari: 'Minggu', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: true },
-    { id: 'l-7', tanggal: '08/08/2026', hari: 'Sabtu', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: true },
-    { id: 'l-8', tanggal: '09/08/2026', hari: 'Minggu', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: true },
-    { id: 'l-9', tanggal: '15/08/2026', hari: 'Sabtu', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: true },
-    { id: 'l-10', tanggal: '16/08/2026', hari: 'Minggu', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: true },
-    { id: 'l-11', tanggal: '17/08/2026', hari: 'Senin (Hari Kemerdekaan)', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: true }
+    { id: 'l-1', tanggal: '18/07/2026', hari: 'Sabtu', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: false },
+    { id: 'l-2', tanggal: '19/07/2026', hari: 'Minggu', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: false },
+    { id: 'l-3', tanggal: '25/07/2026', hari: 'Sabtu', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: false },
+    { id: 'l-4', tanggal: '26/07/2026', hari: 'Minggu', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: false },
+    { id: 'l-5', tanggal: '01/08/2026', hari: 'Sabtu', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: false },
+    { id: 'l-6', tanggal: '02/08/2026', hari: 'Minggu', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: false },
+    { id: 'l-7', tanggal: '08/08/2026', hari: 'Sabtu', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: false },
+    { id: 'l-8', tanggal: '09/08/2026', hari: 'Minggu', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: false },
+    { id: 'l-9', tanggal: '15/08/2026', hari: 'Sabtu', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: false },
+    { id: 'l-10', tanggal: '16/08/2026', hari: 'Minggu', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: false },
+    { id: 'l-11', tanggal: '17/08/2026', hari: 'Senin (Hari Kemerdekaan)', keterangan: 'Support RSCM', waktu: '09.00 - 17.00', hariCount: 1, jamCount: 8, hodApproved: false }
   ]
 };
 

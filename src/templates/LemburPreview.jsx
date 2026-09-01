@@ -177,7 +177,7 @@ export function LemburPreview({ data }) {
                 ) : null}
               </div>
               <div className="w-full border-t border-black pt-0.5 font-semibold text-[10px]">
-                {data.disetujuiOlehNama || 'Ferry Lukito'}
+                {data.disetujuiOlehNama || ''}
               </div>
             </div>
 

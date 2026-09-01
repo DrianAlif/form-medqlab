@@ -135,7 +135,7 @@ export function PermintaanUangMukaVoucher({ data, totalAmount }) {
             )}
           </div>
           <div className="w-full">
-            <div className="font-semibold text-[12px]">{data.hodNama || 'Ferry Lukito'}</div>
+            <div className="font-semibold text-[12px]">{data.hodNama || ''}</div>
             <div className="border-t border-dotted border-black mt-1 pt-0.5 text-[11px] italic">
               {data.hodRole || 'HOD'}
             </div>

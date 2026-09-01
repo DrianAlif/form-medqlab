@@ -605,12 +605,12 @@ export function AkomodasiForm({ data, onChange, onOpenSignatureModal }) {
               type="text"
               value={data.disetujuiOlehNama || ''}
               onChange={(e) => updateField('disetujuiOlehNama', e.target.value)}
-              placeholder="Ferry Lukito"
+              placeholder="Nama Pejabat / HOD"
               className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-white"
             />
             <button
               type="button"
-              onClick={() => onOpenSignatureModal('disetujuiOlehSign', data.disetujuiOlehNama || 'Ferry Lukito')}
+              onClick={() => onOpenSignatureModal('disetujuiOlehSign', data.disetujuiOlehNama || 'Disetujui Oleh')}
               className="w-full flex items-center justify-center gap-1.5 text-xs bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 py-1.5 rounded transition"
             >
               <PenTool className="w-3.5 h-3.5" />
