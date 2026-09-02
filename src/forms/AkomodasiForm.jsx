@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, PenTool, Upload, Image as ImageIcon, ArrowUp, ArrowDown, Calculator, FileText, Loader2, FileCheck } from 'lucide-react';
+import { Plus, Trash2, PenTool, Upload, Image as ImageIcon, ArrowUp, ArrowDown, Calculator, FileText, Loader2, FileCheck, Calendar, ChevronLeft, ChevronRight, CheckCircle2, Sparkles } from 'lucide-react';
 import { formatRupiah } from '../utils/currency';
 import { processUploadedFile } from '../utils/fileUploadHelper';
+import { getMonthPeriodInfo, getCustomRangeInfo } from '../utils/datePeriod';
 
 export function AkomodasiForm({ data, onChange, onOpenSignatureModal }) {
   const [isProcessingFile, setIsProcessingFile] = useState(false);
@@ -10,11 +11,90 @@ export function AkomodasiForm({ data, onChange, onOpenSignatureModal }) {
     onChange({ ...data, [field]: value });
   };
 
+  // Helper to extract initial year-month from items or data
+  const getInitialMonth = () => {
+    if (data.items && data.items.length > 0 && data.items[0].tanggal) {
+      const match = data.items[0].tanggal.match(/\/(\d{2})\/(\d{4})/);
+      if (match) return `${match[2]}-${match[1]}`;
+    }
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  };
+
+  const [periodMode, setPeriodMode] = useState('month'); // 'month' | 'custom'
+  const [selectedMonth, setSelectedMonth] = useState(getInitialMonth);
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+  const [lastAppliedFeedback, setLastAppliedFeedback] = useState(null);
+
+  const currentMonthInfo = getMonthPeriodInfo(selectedMonth);
+
+  const changeMonthBy = (offset) => {
+    const [yStr, mStr] = selectedMonth.split('-');
+    let y = parseInt(yStr, 10);
+    let m = parseInt(mStr, 10) + offset;
+    if (m > 12) {
+      y += Math.floor((m - 1) / 12);
+      m = ((m - 1) % 12) + 1;
+    } else if (m < 1) {
+      y += Math.floor((m - 1) / 12);
+      m = 12 + ((m) % 12);
+    }
+    setSelectedMonth(`${y}-${String(m).padStart(2, '0')}`);
+  };
+
+  const applyMonthToAll = (targetMonthInfo = currentMonthInfo) => {
+    if (!targetMonthInfo) return;
+    const { rangeFormatted, periodeTitle } = targetMonthInfo;
+
+    const newItems = (data.items || []).map(item => ({
+      ...item,
+      tanggal: rangeFormatted
+    }));
+
+    onChange({
+      ...data,
+      periode: periodeTitle,
+      items: newItems
+    });
+    setLastAppliedFeedback(`Periode "${periodeTitle}" (${rangeFormatted}) berhasil diterapkan ke semua baris pengeluaran!`);
+    setTimeout(() => setLastAppliedFeedback(null), 4000);
+  };
+
+  const applyCustomRangeToAll = () => {
+    const rangeInfo = getCustomRangeInfo(customStart, customEnd);
+    if (!rangeInfo) {
+      alert('Silakan pilih Tanggal Mulai dan Tanggal Selesai yang valid.');
+      return;
+    }
+    const { rangeFormatted, periodeTitle } = rangeInfo;
+
+    const newItems = (data.items || []).map(item => ({
+      ...item,
+      tanggal: rangeFormatted
+    }));
+
+    onChange({
+      ...data,
+      periode: periodeTitle,
+      items: newItems
+    });
+    setLastAppliedFeedback(`Rentang "${rangeFormatted}" berhasil diterapkan ke semua baris pengeluaran!`);
+    setTimeout(() => setLastAppliedFeedback(null), 4000);
+  };
+
+  const applyMonthToSingleItem = (index) => {
+    if (!currentMonthInfo) return;
+    const { rangeFormatted } = currentMonthInfo;
+    handleUpdateItem(index, 'tanggal', rangeFormatted);
+  };
+
   // --- Row Operations ---
   const handleAddItem = () => {
+    const defaultTanggal = currentMonthInfo ? currentMonthInfo.rangeFormatted : (data.periode || '');
     const newItem = {
       id: `ak-${Date.now()}`,
-      tanggal: data.periode || '',
+      tanggal: defaultTanggal,
       customer: data.customer || '',
       tujuan: '',
       bensin: 0,
@@ -178,13 +258,24 @@ export function AkomodasiForm({ data, onChange, onOpenSignatureModal }) {
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-600 mb-1">Periode Tanggal</label>
+            <div className="flex justify-between items-center mb-1">
+              <label className="block font-semibold text-slate-600">Periode Tanggal</label>
+              {currentMonthInfo && (
+                <button
+                  type="button"
+                  onClick={() => updateField('periode', currentMonthInfo.periodeTitle)}
+                  className="text-[10px] text-blue-600 hover:text-blue-800 font-semibold underline"
+                >
+                  ⚡ Gunakan {currentMonthInfo.periodeTitle}
+                </button>
+              )}
+            </div>
             <input
               type="text"
               value={data.periode || ''}
               onChange={(e) => updateField('periode', e.target.value)}
-              placeholder="Contoh: 19 Mei - 03 Juni 2025"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              placeholder="Contoh: 1 - 30 SEPTEMBER 2026"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-hidden font-medium"
             />
           </div>
 
@@ -195,7 +286,7 @@ export function AkomodasiForm({ data, onChange, onOpenSignatureModal }) {
               value={data.tanggalDokumen || ''}
               onChange={(e) => updateField('tanggalDokumen', e.target.value)}
               placeholder="Contoh: 31 Agustus 2026"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
             />
           </div>
         </div>
@@ -222,6 +313,155 @@ export function AkomodasiForm({ data, onChange, onOpenSignatureModal }) {
             <Plus className="w-4 h-4" />
             <span>+ Tambah Baris</span>
           </button>
+        </div>
+
+        {/* SMART PERIOD & MONTH GENERATOR WIDGET */}
+        <div className="bg-gradient-to-br from-blue-50 via-indigo-50/40 to-slate-50 border-2 border-blue-200 rounded-xl p-4 space-y-3.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-blue-100 pb-2.5">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-blue-600 text-white rounded-lg shadow-xs">
+                <Calendar className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-blue-950">
+                  Generator Periode & Rentang Tanggal Otomatis (1 Bulan Penuh)
+                </h4>
+                <p className="text-[11px] text-blue-700">
+                  Otomatis menghitung tanggal awal & akhir bulan untuk seluruh baris pengeluaran akomodasi.
+                </p>
+              </div>
+            </div>
+
+            {/* Mode Switcher */}
+            <div className="flex bg-white p-0.5 border border-blue-200 rounded-lg self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setPeriodMode('month')}
+                className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition ${
+                  periodMode === 'month'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                📅 1 Bulan Penuh
+              </button>
+              <button
+                type="button"
+                onClick={() => setPeriodMode('custom')}
+                className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition ${
+                  periodMode === 'custom'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                📆 Rentang Kustom
+              </button>
+            </div>
+          </div>
+
+          {/* Mode 1: Month Selector */}
+          {periodMode === 'month' && currentMonthInfo && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                <div className="sm:col-span-5 flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => changeMonthBy(-1)}
+                    className="p-1.5 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg text-slate-700 transition"
+                    title="Bulan sebelumnya"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <input
+                    type="month"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="flex-1 text-xs px-3 py-2 border border-slate-300 rounded-lg bg-white font-semibold text-slate-800 shadow-2xs focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => changeMonthBy(1)}
+                    className="p-1.5 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg text-slate-700 transition"
+                    title="Bulan berikutnya"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Auto Calculated Summary Tags */}
+                <div className="sm:col-span-7 flex flex-wrap items-center gap-2 text-xs">
+                  <div className="bg-white border border-blue-200 px-2.5 py-1.5 rounded-lg shadow-2xs">
+                    <span className="text-slate-500 text-[10px] block">Rentang Tanggal</span>
+                    <span className="font-bold text-blue-900 font-mono text-[11px]">{currentMonthInfo.rangeFormatted}</span>
+                  </div>
+                  <div className="bg-white border border-blue-200 px-2.5 py-1.5 rounded-lg shadow-2xs">
+                    <span className="text-slate-500 text-[10px] block">Total Hari</span>
+                    <span className="font-bold text-slate-700 text-[11px]">{currentMonthInfo.daysInMonth} Hari</span>
+                  </div>
+                  <div className="bg-white border border-blue-200 px-2.5 py-1.5 rounded-lg shadow-2xs">
+                    <span className="text-slate-500 text-[10px] block">Nama Periode</span>
+                    <span className="font-bold text-slate-800 text-[11px]">{currentMonthInfo.periodeTitle}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => applyMonthToAll(currentMonthInfo)}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm transition active:scale-[0.99]"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Terapkan Otomatis ke Semua Baris Pengeluaran ({currentMonthInfo.rangeFormatted})
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Mode 2: Custom Date Range */}
+          {periodMode === 'custom' && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 items-end">
+                <div>
+                  <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Tanggal Mulai</label>
+                  <input
+                    type="date"
+                    value={customStart}
+                    onChange={(e) => setCustomStart(e.target.value)}
+                    className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Tanggal Selesai</label>
+                  <input
+                    type="date"
+                    value={customEnd}
+                    onChange={(e) => setCustomEnd(e.target.value)}
+                    className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white"
+                  />
+                </div>
+                <div>
+                  <button
+                    type="button"
+                    onClick={applyCustomRangeToAll}
+                    disabled={!customStart || !customEnd}
+                    className="w-full py-1.5 px-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition shadow-xs"
+                  >
+                    Terapkan Rentang Ini
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Feedback banner */}
+          {lastAppliedFeedback && (
+            <div className="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-lg animate-fade-in">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{lastAppliedFeedback}</span>
+            </div>
+          )}
         </div>
 
         <div className="space-y-4">
@@ -262,15 +502,27 @@ export function AkomodasiForm({ data, onChange, onOpenSignatureModal }) {
                 {/* Primary Row Info */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs">
                   <div>
-                    <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">
-                      Tanggal / Periode
-                    </label>
+                    <div className="flex justify-between items-center mb-0.5">
+                      <label className="block text-[10px] font-semibold text-slate-500">
+                        Tanggal / Periode
+                      </label>
+                      {currentMonthInfo && (
+                        <button
+                          type="button"
+                          onClick={() => applyMonthToSingleItem(idx)}
+                          className="text-[9.5px] text-blue-600 hover:text-blue-800 font-semibold underline"
+                          title="Samakan rentang tanggal dengan bulan aktif"
+                        >
+                          ⚡ 1 Bulan Ini
+                        </button>
+                      )}
+                    </div>
                     <input
                       type="text"
                       value={item.tanggal || ''}
                       onChange={(e) => handleUpdateItem(idx, 'tanggal', e.target.value)}
                       placeholder="19 Mei - 03 Juni 2025"
-                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded bg-white text-xs"
+                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded bg-white text-xs font-mono"
                     />
                   </div>
                   <div>

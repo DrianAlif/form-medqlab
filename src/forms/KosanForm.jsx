@@ -1,6 +1,7 @@
-import React from 'react';
-import { Plus, Trash2, PenTool, Layers, FolderPlus, FilePlus2, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, Trash2, PenTool, Layers, FolderPlus, FilePlus2, Sparkles, Calendar, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { formatRupiah } from '../utils/currency';
+import { getMonthPeriodInfo, getCustomRangeInfo } from '../utils/datePeriod';
 
 // Helper to normalize data structure to 3-level
 export function getNormalizedParentCategories(data) {
@@ -82,6 +83,117 @@ export function KosanForm({ data, onChange, onOpenSignatureModal }) {
 
   const parentCategories = getNormalizedParentCategories(data);
 
+  // Helper to extract initial year-month from items or data
+  const getInitialMonth = () => {
+    for (const p of parentCategories) {
+      for (const s of (p.subCategories || [])) {
+        for (const it of (s.items || [])) {
+          const t = it.rentangTanggal || it.tanggal || '';
+          const match = t.match(/\/(\d{2})\/(\d{4})/);
+          if (match) return `${match[2]}-${match[1]}`;
+        }
+      }
+    }
+    if (data.tanggal) {
+      return data.tanggal.slice(0, 7);
+    }
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  };
+
+  const [periodMode, setPeriodMode] = useState('month'); // 'month' | 'custom'
+  const [selectedMonth, setSelectedMonth] = useState(getInitialMonth);
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+  const [syncVoucherDesc, setSyncVoucherDesc] = useState(true);
+  const [lastAppliedFeedback, setLastAppliedFeedback] = useState(null);
+
+  const currentMonthInfo = getMonthPeriodInfo(selectedMonth);
+
+  const changeMonthBy = (offset) => {
+    const [yStr, mStr] = selectedMonth.split('-');
+    let y = parseInt(yStr, 10);
+    let m = parseInt(mStr, 10) + offset;
+    if (m > 12) {
+      y += Math.floor((m - 1) / 12);
+      m = ((m - 1) % 12) + 1;
+    } else if (m < 1) {
+      y += Math.floor((m - 1) / 12);
+      m = 12 + ((m) % 12);
+    }
+    setSelectedMonth(`${y}-${String(m).padStart(2, '0')}`);
+  };
+
+  const applyMonthToAll = (targetMonthInfo = currentMonthInfo) => {
+    if (!targetMonthInfo) return;
+    const { rangeFormatted, periodeTitle } = targetMonthInfo;
+
+    const updated = parentCategories.map(parent => ({
+      ...parent,
+      subCategories: (parent.subCategories || []).map(sub => ({
+        ...sub,
+        items: (sub.items || []).map(item => ({
+          ...item,
+          rentangTanggal: rangeFormatted
+        }))
+      }))
+    }));
+
+    const updatePayload = {
+      ...data,
+      periode: periodeTitle,
+      parentCategories: updated
+    };
+
+    if (syncVoucherDesc) {
+      updatePayload.keterangan = `Pengajuan Kosan untuk ${data.rumahSakit || 'RSCM'}\nperiode ${periodeTitle}`;
+    }
+
+    onChange(updatePayload);
+    setLastAppliedFeedback(`Periode "${periodeTitle}" (${rangeFormatted}) berhasil diterapkan ke semua baris budgeting!`);
+    setTimeout(() => setLastAppliedFeedback(null), 4000);
+  };
+
+  const applyCustomRangeToAll = () => {
+    const rangeInfo = getCustomRangeInfo(customStart, customEnd);
+    if (!rangeInfo) {
+      alert('Silakan pilih Tanggal Mulai dan Tanggal Selesai yang valid.');
+      return;
+    }
+    const { rangeFormatted, periodeTitle } = rangeInfo;
+
+    const updated = parentCategories.map(parent => ({
+      ...parent,
+      subCategories: (parent.subCategories || []).map(sub => ({
+        ...sub,
+        items: (sub.items || []).map(item => ({
+          ...item,
+          rentangTanggal: rangeFormatted
+        }))
+      }))
+    }));
+
+    const updatePayload = {
+      ...data,
+      periode: periodeTitle,
+      parentCategories: updated
+    };
+
+    if (syncVoucherDesc) {
+      updatePayload.keterangan = `Pengajuan Kosan untuk ${data.rumahSakit || 'RSCM'}\nperiode ${periodeTitle}`;
+    }
+
+    onChange(updatePayload);
+    setLastAppliedFeedback(`Rentang "${rangeFormatted}" berhasil diterapkan ke semua baris budgeting!`);
+    setTimeout(() => setLastAppliedFeedback(null), 4000);
+  };
+
+  const applyMonthToSingleItem = (pIndex, sIndex, itemIndex) => {
+    if (!currentMonthInfo) return;
+    const { rangeFormatted } = currentMonthInfo;
+    updateItem(pIndex, sIndex, itemIndex, 'rentangTanggal', rangeFormatted);
+  };
+
   const updateParentCategories = (newCategories) => {
     onChange({
       ...data,
@@ -92,6 +204,7 @@ export function KosanForm({ data, onChange, onOpenSignatureModal }) {
   // --- 1. Parent Category Operations (Level 1) ---
   const addParentCategory = () => {
     const newPIndex = parentCategories.length + 1;
+    const defaultTanggal = currentMonthInfo ? currentMonthInfo.rangeFormatted : '09/09/2026 - 09/10/2026';
     const newParent = {
       id: `p-${Date.now()}`,
       title: `Kategori ${newPIndex}`,
@@ -103,7 +216,7 @@ export function KosanForm({ data, onChange, onOpenSignatureModal }) {
             {
               id: `item-${Date.now()}-1`,
               deskripsi: 'Deskripsi Item Baru',
-              rentangTanggal: '09/09/2026 - 09/10/2026',
+              rentangTanggal: defaultTanggal,
               qty: 1,
               unit: 'Bulan',
               hargaSatuan: 1000000,
@@ -136,6 +249,7 @@ export function KosanForm({ data, onChange, onOpenSignatureModal }) {
     const updated = [...parentCategories];
     const parent = updated[pIndex];
     const newSubIndex = (parent.subCategories || []).length + 1;
+    const defaultTanggal = currentMonthInfo ? currentMonthInfo.rangeFormatted : '09/09/2026 - 09/10/2026';
 
     const newSub = {
       id: `sub-${Date.now()}-${newSubIndex}`,
@@ -144,7 +258,7 @@ export function KosanForm({ data, onChange, onOpenSignatureModal }) {
         {
           id: `item-${Date.now()}`,
           deskripsi: 'Item Baru',
-          rentangTanggal: '09/09/2026 - 09/10/2026',
+          rentangTanggal: defaultTanggal,
           qty: 1,
           unit: 'Kamar',
           hargaSatuan: 500000,
@@ -185,11 +299,12 @@ export function KosanForm({ data, onChange, onOpenSignatureModal }) {
     const parent = updated[pIndex];
     const subCategories = [...(parent.subCategories || [])];
     const sub = subCategories[sIndex];
+    const defaultTanggal = currentMonthInfo ? currentMonthInfo.rangeFormatted : '09/09/2026 - 09/10/2026';
 
     const newItem = {
       id: `item-${Date.now()}`,
       deskripsi: 'Item Baru',
-      rentangTanggal: '09/09/2026 - 09/10/2026',
+      rentangTanggal: defaultTanggal,
       qty: 1,
       unit: 'Kamar',
       hargaSatuan: 100000,
@@ -378,6 +493,165 @@ export function KosanForm({ data, onChange, onOpenSignatureModal }) {
           </button>
         </div>
 
+        {/* SMART PERIOD & MONTH GENERATOR WIDGET */}
+        <div className="bg-gradient-to-br from-emerald-50 via-teal-50/40 to-slate-50 border-2 border-emerald-200 rounded-xl p-4 space-y-3.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-100 pb-2.5">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-emerald-600 text-white rounded-lg shadow-xs">
+                <Calendar className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-emerald-950">
+                  Generator Periode & Rentang Tanggal Otomatis (1 Bulan Penuh)
+                </h4>
+                <p className="text-[11px] text-emerald-700">
+                  Otomatis menghitung tanggal awal & akhir bulan untuk seluruh kategori kosan & budgeting.
+                </p>
+              </div>
+            </div>
+
+            {/* Mode Switcher */}
+            <div className="flex bg-white p-0.5 border border-emerald-200 rounded-lg self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setPeriodMode('month')}
+                className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition ${
+                  periodMode === 'month'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                📅 1 Bulan Penuh
+              </button>
+              <button
+                type="button"
+                onClick={() => setPeriodMode('custom')}
+                className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition ${
+                  periodMode === 'custom'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                📆 Rentang Kustom
+              </button>
+            </div>
+          </div>
+
+          {/* Mode 1: Month Selector */}
+          {periodMode === 'month' && currentMonthInfo && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                <div className="sm:col-span-5 flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => changeMonthBy(-1)}
+                    className="p-1.5 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg text-slate-700 transition"
+                    title="Bulan sebelumnya"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <input
+                    type="month"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="flex-1 text-xs px-3 py-2 border border-slate-300 rounded-lg bg-white font-semibold text-slate-800 shadow-2xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => changeMonthBy(1)}
+                    className="p-1.5 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg text-slate-700 transition"
+                    title="Bulan berikutnya"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Auto Calculated Summary Tags */}
+                <div className="sm:col-span-7 flex flex-wrap items-center gap-2 text-xs">
+                  <div className="bg-white border border-emerald-200 px-2.5 py-1.5 rounded-lg shadow-2xs">
+                    <span className="text-slate-500 text-[10px] block">Rentang Tanggal</span>
+                    <span className="font-bold text-emerald-900 font-mono text-[11px]">{currentMonthInfo.rangeFormatted}</span>
+                  </div>
+                  <div className="bg-white border border-emerald-200 px-2.5 py-1.5 rounded-lg shadow-2xs">
+                    <span className="text-slate-500 text-[10px] block">Total Hari</span>
+                    <span className="font-bold text-slate-700 text-[11px]">{currentMonthInfo.daysInMonth} Hari</span>
+                  </div>
+                  <div className="bg-white border border-emerald-200 px-2.5 py-1.5 rounded-lg shadow-2xs">
+                    <span className="text-slate-500 text-[10px] block">Nama Periode</span>
+                    <span className="font-bold text-slate-800 text-[11px]">{currentMonthInfo.periodeTitle}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => applyMonthToAll(currentMonthInfo)}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition active:scale-[0.99]"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Terapkan Otomatis ke Semua Item Kosan ({currentMonthInfo.rangeFormatted})
+                </button>
+
+                <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={syncVoucherDesc}
+                    onChange={(e) => setSyncVoucherDesc(e.target.checked)}
+                    className="rounded text-emerald-600 border-slate-300 focus:ring-emerald-500"
+                  />
+                  <span>Sinkronkan ke Keterangan Voucher Page 1</span>
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* Mode 2: Custom Date Range */}
+          {periodMode === 'custom' && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 items-end">
+                <div>
+                  <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Tanggal Mulai</label>
+                  <input
+                    type="date"
+                    value={customStart}
+                    onChange={(e) => setCustomStart(e.target.value)}
+                    className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Tanggal Selesai</label>
+                  <input
+                    type="date"
+                    value={customEnd}
+                    onChange={(e) => setCustomEnd(e.target.value)}
+                    className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white"
+                  />
+                </div>
+                <div>
+                  <button
+                    type="button"
+                    onClick={applyCustomRangeToAll}
+                    disabled={!customStart || !customEnd}
+                    className="w-full py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition shadow-xs"
+                  >
+                    Terapkan Rentang Ini
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Feedback banner */}
+          {lastAppliedFeedback && (
+            <div className="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-lg animate-fade-in">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{lastAppliedFeedback}</span>
+            </div>
+          )}
+        </div>
+
         {/* Project Metadata */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
           <div>
@@ -399,12 +673,24 @@ export function KosanForm({ data, onChange, onOpenSignatureModal }) {
             />
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">Periode</label>
+            <div className="flex justify-between items-center mb-0.5">
+              <label className="block text-[11px] font-semibold text-slate-600">Periode</label>
+              {currentMonthInfo && (
+                <button
+                  type="button"
+                  onClick={() => updateField('periode', currentMonthInfo.periodeTitle)}
+                  className="text-[10px] text-emerald-600 hover:text-emerald-800 font-semibold underline"
+                >
+                  ⚡ Gunakan {currentMonthInfo.periodeTitle}
+                </button>
+              )}
+            </div>
             <input
               type="text"
               value={data.periode || ''}
               onChange={(e) => updateField('periode', e.target.value)}
-              className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-white"
+              placeholder="Contoh: 1 - 30 SEPTEMBER 2026"
+              className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-white font-medium"
             />
           </div>
           <div>
@@ -557,15 +843,27 @@ export function KosanForm({ data, onChange, onOpenSignatureModal }) {
                                     />
                                   </div>
                                   <div>
-                                    <label className="block text-[10px] text-slate-500 font-semibold mb-0.5">
-                                      Rentang Tanggal
-                                    </label>
+                                    <div className="flex justify-between items-center mb-0.5">
+                                      <label className="block text-[10px] text-slate-500 font-semibold">
+                                        Rentang Tanggal
+                                      </label>
+                                      {currentMonthInfo && (
+                                        <button
+                                          type="button"
+                                          onClick={() => applyMonthToSingleItem(pIndex, sIndex, itemIdx)}
+                                          className="text-[9.5px] text-emerald-600 hover:text-emerald-800 font-semibold underline"
+                                          title="Samakan rentang tanggal dengan bulan aktif"
+                                        >
+                                          ⚡ 1 Bulan Ini
+                                        </button>
+                                      )}
+                                    </div>
                                     <input
                                       type="text"
                                       value={item.rentangTanggal ?? item.tanggal ?? ''}
                                       onChange={(e) => updateItem(pIndex, sIndex, itemIdx, 'rentangTanggal', e.target.value)}
                                       placeholder="09/09/2026 - 09/10/2026"
-                                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded bg-white text-xs"
+                                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded bg-white text-xs font-mono"
                                     />
                                   </div>
                                 </div>
