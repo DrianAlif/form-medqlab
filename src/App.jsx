@@ -323,7 +323,7 @@ function MainApp() {
           }`}
         >
           <div className="max-w-2xl mx-auto space-y-4 pb-24 lg:pb-16">
-            <div className="flex items-center justify-between sticky top-0 bg-slate-50/95 backdrop-blur-xs py-2 z-10 border-b border-slate-200 mb-2">
+            <div className="flex items-center justify-between py-2 border-b border-slate-200 mb-2">
               <h2 className="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
                 Editor Data Form
