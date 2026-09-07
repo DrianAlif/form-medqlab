@@ -301,7 +301,7 @@ function MainApp() {
   };
 
   return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden bg-slate-100 font-sans">
+    <div className="h-screen w-screen flex flex-col overflow-hidden bg-slate-100 font-sans print:h-auto print:w-full print:bg-white print:overflow-visible">
       {/* Toast Notification */}
       {toast && (
         <div className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg bg-slate-900 text-white text-xs font-medium animate-bounce">
@@ -395,7 +395,7 @@ function MainApp() {
 
         {/* Right Column: Live PDF Document Preview (Visible on Desktop OR when viewMode === 'preview' on mobile) */}
         <section
-          className={`flex-1 h-full overflow-y-auto bg-slate-200/80 flex flex-col relative min-h-0 ${
+          className={`flex-1 h-full overflow-y-auto bg-slate-200/80 flex flex-col relative min-h-0 print:bg-white print:p-0 print:m-0 print:overflow-visible print:h-auto print:flex ${
             viewMode === 'form' ? 'hidden lg:flex' : 'flex'
           }`}
         >
@@ -458,7 +458,7 @@ function MainApp() {
           </div>
 
           {/* Document Preview Canvas with Smooth Zoom Scaling */}
-          <div className="flex-1 p-2 sm:p-6 flex justify-center items-start overflow-x-auto min-h-0">
+          <div className="flex-1 p-2 sm:p-6 flex justify-center items-start overflow-x-auto min-h-0 print:p-0 print:m-0 print:overflow-visible print:bg-white">
             <div
               id="pdf-zoom-container"
               style={{
@@ -466,7 +466,7 @@ function MainApp() {
                 transformOrigin: 'top center',
                 transition: 'transform 0.15s ease-out'
               }}
-              className="pb-28 lg:pb-20"
+              className="pb-28 lg:pb-20 print:p-0 print:m-0 print:!transform-none print:bg-white"
             >
               {activeTab === 'kosan' && <KosanPreview data={kosanData} />}
               {activeTab === 'makan' && <MakanPreview data={makanData} />}

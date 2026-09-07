@@ -186,42 +186,92 @@
 }
 
 /* ==========================================
-   RESET MEDIA PRINT GLOBAL (Browser Print)
+   RESET MEDIA PRINT GLOBAL (Browser Print & Export PDF)
    ========================================== */
 @media print {
+  /* 1. Global Reset for Page and Body: Pure White Canvas */
   html, body {
     width: 100% !important;
     height: auto !important;
+    min-height: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
     background: #ffffff !important;
+    background-color: #ffffff !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* Sembunyikan antarmuka aplikasi web */
+  /* 2. Reset all app shell containers to pure white background */
+  #root,
+  body > div,
+  main,
+  section,
+  div {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    box-shadow: none !important;
+  }
+
+  /* 3. Neutralize layout bounds, scrollbars, and padding between body and sheets */
+  body > div,
+  main,
+  section,
+  section > div {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+  }
+
+  /* 4. CRITICAL: Neutralize zoom scale transform so sheets print at 100% full paper */
+  #pdf-zoom-container {
+    transform: none !important;
+    transform-origin: top left !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* 5. Hide all non-printable UI elements */
   .no-print,
   .editor-pane,
   .nav-tabs,
   .header-actions,
-  .sidebar {
+  .sidebar,
+  button,
+  header,
+  nav,
+  aside {
     display: none !important;
   }
 
-  /* Tampilkan area render penuh */
+  /* 6. Printable Container */
   #pdf-export-container,
   #pdf-content {
     display: block !important;
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
   }
 
+  /* 7. Individual Sheets */
   .pdf-sheet {
     box-shadow: none !important;
-    margin: 0 !important;
+    margin: 0 auto !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
     page-break-after: always !important;
     break-after: page !important;
+    box-sizing: border-box !important;
   }
 
   .pdf-sheet:last-child {
@@ -229,18 +279,25 @@
     break-after: avoid !important;
   }
 
+  /* 8. Sheet Dimensions for Portrait and Landscape */
   .pdf-page-portrait {
     width: 100% !important;
-    max-width: 100% !important;
-    min-height: 0 !important;
+    max-width: 210mm !important;
+    min-height: 297mm !important;
+    height: auto !important;
     padding: 10mm 12mm !important;
+    margin: 0 auto !important;
+    background: #ffffff !important;
   }
 
   .pdf-page-landscape {
     width: 100% !important;
-    max-width: 100% !important;
-    min-height: 0 !important;
+    max-width: 297mm !important;
+    min-height: 210mm !important;
+    height: auto !important;
     padding: 8mm 10mm !important;
+    margin: 0 auto !important;
+    background: #ffffff !important;
   }
 
   .employee-info-box {
@@ -253,15 +310,40 @@
   .info-row {
     grid-template-columns: 100px 14px 1fr !important;
   }
+
+  /* Keep table borders black */
+  table, tr, th, td, div.border {
+    border-color: #000000 !important;
+  }
+
+  /* Preserve intentional cell badges and highlights */
+  .bg-slate-50, .bg-slate-50\/20, .bg-slate-50\/30, .bg-slate-50\/50 {
+    background-color: #f8fafc !important;
+  }
+  .bg-slate-100 {
+    background-color: #f1f5f9 !important;
+  }
+  .bg-slate-300 {
+    background-color: #cbd5e1 !important;
+  }
+  .bg-\[\#c6e0b4\] {
+    background-color: #c6e0b4 !important;
+  }
+  .bg-\[\#d9d9d9\] {
+    background-color: #d9d9d9 !important;
+  }
+  .bg-\[\#c00000\] {
+    background-color: #c00000 !important;
+  }
 }
 
-/* Kunci orientasi cetak dinamis via attribute */
+/* Dynamic Print Orientation Styles */
 @page {
   margin: 0;
 }
 body[data-form-orientation="portrait"] {
-  @page { size: A4 portrait; }
+  @page { size: A4 portrait; margin: 0; }
 }
 body[data-form-orientation="landscape"] {
-  @page { size: A4 landscape; }
+  @page { size: A4 landscape; margin: 0; }
 }

@@ -100,6 +100,16 @@ export async function handleDownloadPDF({
  */
 export function handlePrintDocument(orientation = 'portrait') {
   document.body.setAttribute('data-form-orientation', orientation);
+
+  // Dynamically inject @page rule for 100% browser print orientation lock
+  let styleEl = document.getElementById('dynamic-print-page-style');
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = 'dynamic-print-page-style';
+    document.head.appendChild(styleEl);
+  }
+  styleEl.textContent = `@page { size: A4 ${orientation} !important; margin: 0 !important; }`;
+
   window.print();
 }
 
