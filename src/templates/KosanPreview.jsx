@@ -55,7 +55,7 @@ export function KosanPreview({ data }) {
           </div>
 
           {/* Budgeting Table */}
-          <div className="border border-black overflow-hidden">
+          <div className="border border-black">
             <table className="w-full border-collapse text-[9.5px]">
               <colgroup>
                 <col style={{ width: '32px' }} />

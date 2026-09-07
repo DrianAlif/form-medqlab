@@ -46,7 +46,7 @@ export function MakanPreview({ data }) {
           </div>
 
           {/* Table */}
-          <div className="border border-black overflow-hidden">
+          <div className="border border-black">
             <table className="w-full border-collapse text-[9.5px]">
               <thead>
                 <tr className="bg-[#c6e0b4] text-black font-semibold text-center border-b border-black">

@@ -460,6 +460,7 @@ function MainApp() {
           {/* Document Preview Canvas with Smooth Zoom Scaling */}
           <div className="flex-1 p-2 sm:p-6 flex justify-center items-start overflow-x-auto min-h-0">
             <div
+              id="pdf-zoom-container"
               style={{
                 transform: `scale(${zoomLevel})`,
                 transformOrigin: 'top center',

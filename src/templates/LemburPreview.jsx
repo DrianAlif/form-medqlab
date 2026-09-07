@@ -25,7 +25,7 @@ export function LemburPreview({ data }) {
             </div>
 
             {/* Timesheet Table */}
-            <div className="border border-black overflow-hidden mb-3">
+            <div className="border border-black mb-3">
               <table className="w-full border-collapse text-[9.5px]">
                 <colgroup>
                   <col style={{ width: '85px' }} />

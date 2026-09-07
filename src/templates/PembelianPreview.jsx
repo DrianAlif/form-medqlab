@@ -63,16 +63,16 @@ export function PembelianPreview({ data = {} }) {
             </div>
 
             {/* Unified Table: Items + Signatures in One Continuous Grid */}
-            <div className="border border-black overflow-hidden mb-4">
+            <div className="border border-black mb-4">
               <table className="w-full border-collapse text-[9.5px]">
                 <colgroup>
-                  <col style={{ width: '36px' }} />
+                  <col style={{ width: '38px' }} />
                   <col />
-                  <col style={{ width: '45px' }} />
-                  <col style={{ width: '90px' }} />
+                  <col style={{ width: '48px' }} />
                   <col style={{ width: '95px' }} />
-                  <col style={{ width: '130px' }} />
-                  <col style={{ width: '140px' }} />
+                  <col style={{ width: '100px' }} />
+                  <col style={{ width: '135px' }} />
+                  <col style={{ width: '145px' }} />
                 </colgroup>
                 <thead>
                   <tr className="border-b border-black text-center font-bold text-[9.5px]">
@@ -82,24 +82,24 @@ export function PembelianPreview({ data = {} }) {
                     <th rowSpan={2} className="border-r border-black p-1.5 align-middle text-center">
                       Jenis/ Nama Barang
                     </th>
-                    <th rowSpan={2} className="border-r border-black p-1.5 w-12 align-middle">
+                    <th rowSpan={2} className="border-r border-black p-1.5 align-middle">
                       Qty
                     </th>
                     <th colSpan={2} className="border-r border-b border-black p-1 text-center font-bold">
                       Harga
                     </th>
-                    <th rowSpan={2} className="border-r border-black p-1.5 w-36 align-middle text-center">
+                    <th rowSpan={2} className="border-r border-black p-1.5 align-middle text-center">
                       keperluan
                     </th>
-                    <th rowSpan={2} className="p-1.5 w-44 align-middle text-center">
+                    <th rowSpan={2} className="p-1.5 align-middle text-center">
                       Keterangan
                     </th>
                   </tr>
                   <tr className="border-b border-black text-center font-bold text-[9px]">
-                    <th className="border-r border-black p-1 w-24">
+                    <th className="border-r border-black p-1">
                       Satuan
                     </th>
-                    <th className="border-r border-black p-1 w-24">
+                    <th className="border-r border-black p-1">
                       Total
                     </th>
                   </tr>
@@ -149,14 +149,14 @@ export function PembelianPreview({ data = {} }) {
                   </tr>
 
                   {/* Unified Signatures Header Row */}
-                  <tr className="border-b border-black font-bold text-[9.5px]">
-                    <td colSpan={2} className="border-r border-black p-1 text-left px-2">
+                  <tr className="border-b border-black font-bold text-[9.5px] bg-slate-50/30">
+                    <td colSpan={2} className="border-r border-black p-1.5 text-left px-2.5">
                       Diajukan :
                     </td>
-                    <td colSpan={3} className="border-r border-black p-1 text-left px-2">
+                    <td colSpan={3} className="border-r border-black p-1.5 text-left px-2.5">
                       Direview Oleh :
                     </td>
-                    <td colSpan={2} className="p-1 text-left px-2">
+                    <td colSpan={2} className="p-1.5 text-left px-2.5">
                       Disetujui Oleh :
                     </td>
                   </tr>
@@ -176,7 +176,7 @@ export function PembelianPreview({ data = {} }) {
                           <div className="h-12" />
                         )}
                       </div>
-                      <div className="font-semibold text-black underline underline-offset-2">
+                      <div className="font-semibold text-black underline underline-offset-4 pb-0.5 min-h-[20px]">
                         {data.diajukanNama || 'Galih Wicaksono'}
                       </div>
                     </td>
@@ -194,7 +194,7 @@ export function PembelianPreview({ data = {} }) {
                           <div className="h-12" />
                         )}
                       </div>
-                      <div className="font-semibold text-black underline underline-offset-2">
+                      <div className="font-semibold text-black underline underline-offset-4 pb-0.5 min-h-[20px]">
                         {data.direviewNama || 'Enjay Tarigan'}
                       </div>
                     </td>
@@ -212,21 +212,21 @@ export function PembelianPreview({ data = {} }) {
                           <div className="h-12" />
                         )}
                       </div>
-                      <div className="font-semibold text-black underline underline-offset-2 min-h-[16px]">
+                      <div className="font-semibold text-black underline underline-offset-4 pb-0.5 min-h-[20px]">
                         {data.disetujuiNama || ''}
                       </div>
                     </td>
                   </tr>
 
                   {/* Unified Signatures Bottom Roles Row */}
-                  <tr className="text-[9px] text-center font-normal">
-                    <td colSpan={2} className="border-r border-black py-0.5">
+                  <tr className="text-[9.5px] text-center font-normal border-t border-black bg-slate-50/20">
+                    <td colSpan={2} className="border-r border-black py-1 px-2" style={{ borderRight: '1px solid black' }}>
                       {data.diajukanRole || 'Pemesan'}
                     </td>
-                    <td colSpan={3} className="border-r border-black py-0.5">
+                    <td colSpan={3} className="border-r border-black py-1 px-2" style={{ borderRight: '1px solid black' }}>
                       {data.direviewRole || ''}
                     </td>
-                    <td colSpan={2} className="py-0.5">
+                    <td colSpan={2} className="py-1 px-2">
                       {data.disetujuiRole || 'Direktur'}
                     </td>
                   </tr>

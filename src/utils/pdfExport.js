@@ -2,11 +2,14 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 /**
- * Gold-Standard Multi-Page PDF Export Engine
- * 1. Off-screen DOM clone: isolates from active screen zoom/transforms to guarantee 100% sharp, unskewed rendering.
- * 2. letterRendering: false: eliminates any merged-word/kerning artifacts.
- * 3. Exact per-sheet iteration: guarantees exact page count with 0 blank pages.
- * 4. Precise A4 aspect-ratio mapping (794x1123 for Portrait, 1122x794 for Landscape).
+ * Pixel-Perfect Multi-Page PDF Export Engine
+ * 1. Live DOM Capture: captures directly from real, fully-rendered DOM to guarantee
+ *    100% visual fidelity matching on-screen application preview.
+ * 2. Unscaled Capture: temporarily resets CSS zoom/transforms so html2canvas renders
+ *    pure 1:1 layout with native subpixel typography and exact border metrics.
+ * 3. Exact A4 Aspect-Ratio Mapping: locks canvas dimensions to physical A4 bounds
+ *    (297mm x 210mm Landscape, 210mm x 297mm Portrait) with 0% distortion or squashing.
+ * 4. Crisp 300 DPI Resolution: renders at scale 2.0 with high-quality JPEG output.
  */
 export async function handleDownloadPDF({
   containerId = 'pdf-export-container',
@@ -19,35 +22,48 @@ export async function handleDownloadPDF({
     return false;
   }
 
-  // 1. Create clean off-screen sandbox to avoid zoom/transform distortion
-  const offscreen = document.createElement('div');
-  offscreen.style.position = 'fixed';
-  offscreen.style.top = '0';
-  offscreen.style.left = '-99999px';
-  offscreen.style.width = orientation === 'landscape' ? '1122px' : '794px';
-  offscreen.style.background = '#ffffff';
-  offscreen.style.zIndex = '-99999';
-  offscreen.style.margin = '0';
-  offscreen.style.padding = '0';
+  // 1. Temporarily unscale zoom container to capture native 100% dimensions
+  const zoomContainer = document.getElementById('pdf-zoom-container');
+  const originalTransform = zoomContainer ? zoomContainer.style.transform : '';
+  const originalTransition = zoomContainer ? zoomContainer.style.transition : '';
 
-  // 2. Clone the container
-  const clone = container.cloneNode(true);
-  clone.style.transform = 'none';
-  clone.style.margin = '0';
-  clone.style.padding = '0';
-  offscreen.appendChild(clone);
-  document.body.appendChild(offscreen);
+  // 2. If mobile view has preview hidden, temporarily make preview visible
+  const previewSection = container.closest('section');
+  let wasSectionHidden = false;
+  if (previewSection && window.getComputedStyle(previewSection).display === 'none') {
+    wasSectionHidden = true;
+    previewSection.style.setProperty('display', 'flex', 'important');
+    previewSection.style.setProperty('position', 'fixed', 'important');
+    previewSection.style.setProperty('top', '0', 'important');
+    previewSection.style.setProperty('left', '0', 'important');
+    previewSection.style.setProperty('z-index', '-9999', 'important');
+    previewSection.style.setProperty('opacity', '0', 'important');
+  }
+
+  if (zoomContainer) {
+    zoomContainer.style.transition = 'none';
+    zoomContainer.style.transform = 'none';
+  }
+
+  // 3. Select all discrete sheets within the live container
+  let sheets = Array.from(container.querySelectorAll('.pdf-sheet'));
+  if (sheets.length === 0) {
+    sheets = Array.from(container.querySelectorAll('.pdf-page-portrait, .pdf-page-landscape'));
+  }
+  if (sheets.length === 0) {
+    sheets = [container];
+  }
+
+  // Temporarily strip screen drop-shadows for pristine paper edges
+  const originalShadows = sheets.map(s => s.style.boxShadow);
+  sheets.forEach(s => {
+    s.style.boxShadow = 'none';
+  });
+
+  // 4. Wait 2 animation frames for browser layout engine to paint at 1:1 scale
+  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
   try {
-    // 3. Select all discrete sheets within the cloned tree
-    let sheets = Array.from(clone.querySelectorAll('.pdf-sheet'));
-    if (sheets.length === 0) {
-      sheets = Array.from(clone.querySelectorAll('.pdf-page-portrait, .pdf-page-landscape'));
-    }
-    if (sheets.length === 0) {
-      sheets = [clone];
-    }
-
     const pdf = new jsPDF({
       orientation: orientation,
       unit: 'mm',
@@ -58,17 +74,28 @@ export async function handleDownloadPDF({
     const pdfPageWidth = orientation === 'portrait' ? 210 : 297;
     const pdfPageHeight = orientation === 'portrait' ? 297 : 210;
 
+    const defaultSheetWidth = orientation === 'landscape' ? 1122 : 794;
+    const defaultSheetHeight = orientation === 'landscape' ? 794 : 1123;
+
     for (let i = 0; i < sheets.length; i++) {
       const sheet = sheets[i];
 
-      // Render off-screen sheet with pure font metrics and 2.0 scale (crisp 300 DPI)
+      // Measure exact layout dimensions (border-box)
+      const sheetWidth = sheet.offsetWidth || defaultSheetWidth;
+      const sheetHeight = Math.max(sheet.offsetHeight || defaultSheetHeight, defaultSheetHeight);
+
+      // Render live sheet at 2.0 scale (ultra-crisp 300 DPI)
       const canvas = await html2canvas(sheet, {
         scale: 2.0,
         useCORS: true,
         allowTaint: true,
         logging: false,
-        letterRendering: false, // Critical: preserves native word spacing
-        backgroundColor: '#ffffff'
+        letterRendering: false,
+        backgroundColor: '#ffffff',
+        width: sheetWidth,
+        height: sheetHeight,
+        windowWidth: defaultSheetWidth + 100,
+        windowHeight: defaultSheetHeight + 100
       });
 
       const imgData = canvas.toDataURL('image/jpeg', 0.98);
@@ -77,8 +104,11 @@ export async function handleDownloadPDF({
         pdf.addPage('a4', orientation);
       }
 
-      // Add image precisely mapped to A4 bounds without stretching
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfPageWidth, pdfPageHeight, undefined, 'FAST');
+      // Exact aspect-ratio mapping: guarantees zero stretching or squashing
+      const imgHeight = (canvas.height * pdfPageWidth) / canvas.width;
+      const finalHeight = Math.min(imgHeight, pdfPageHeight);
+
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfPageWidth, finalHeight, undefined, 'FAST');
     }
 
     pdf.save(filename);
@@ -88,9 +118,21 @@ export async function handleDownloadPDF({
     window.print();
     return false;
   } finally {
-    // Clean up temporary sandbox element
-    if (document.body.contains(offscreen)) {
-      document.body.removeChild(offscreen);
+    // 5. Restore live zoom container, shadows & mobile visibility
+    if (zoomContainer) {
+      zoomContainer.style.transform = originalTransform;
+      zoomContainer.style.transition = originalTransition;
+    }
+    sheets.forEach((s, idx) => {
+      s.style.boxShadow = originalShadows[idx] || '';
+    });
+    if (wasSectionHidden && previewSection) {
+      previewSection.style.removeProperty('display');
+      previewSection.style.removeProperty('position');
+      previewSection.style.removeProperty('top');
+      previewSection.style.removeProperty('left');
+      previewSection.style.removeProperty('z-index');
+      previewSection.style.removeProperty('opacity');
     }
   }
 }

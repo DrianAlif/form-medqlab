@@ -92,7 +92,7 @@ export function AkomodasiPreview({ data }) {
             </div>
 
             {/* Main Expense Table (13 Columns, tabular numbers) */}
-            <div className="border border-black overflow-hidden mb-3">
+            <div className="border border-black mb-3">
               <table className="w-full border-collapse text-[9.5px]">
                 <colgroup>
                   <col style={{ width: '28px' }} />
