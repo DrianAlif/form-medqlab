@@ -206,3 +206,35 @@ export const initialAkomodasiData = {
   // Uploaded receipt images
   attachments: []
 };
+
+// 5. Form Permintaan Pembelian Barang Sample Data
+export const initialPembelianData = {
+  nomor: '',
+  tanggal: '2026-08-06',
+  dept: 'Developer',
+  nama: 'Galih Wicaksono',
+
+  items: [
+    {
+      id: 'pb-1',
+      namaBarang: 'Claude Code',
+      qty: 1,
+      hargaSatuan: 359660,
+      keperluan: 'Pekerjaan',
+      keterangan: ''
+    }
+  ],
+
+  // Signatures
+  diajukanNama: 'Galih Wicaksono',
+  diajukanRole: 'Pemesan',
+  diajukanSign: '',
+
+  direviewNama: 'Enjay Tarigan',
+  direviewRole: '',
+  direviewSign: '',
+
+  disetujuiNama: '', // Default empty (No Wahyu Wibisono)
+  disetujuiRole: 'Direktur',
+  disetujuiSign: ''
+};

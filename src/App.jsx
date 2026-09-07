@@ -4,17 +4,20 @@ import { KosanForm, getNormalizedParentCategories } from './forms/KosanForm';
 import { MakanForm } from './forms/MakanForm';
 import { LemburForm } from './forms/LemburForm';
 import { AkomodasiForm } from './forms/AkomodasiForm';
+import { PembelianForm } from './forms/PembelianForm';
 import { KosanPreview } from './templates/KosanPreview';
 import { MakanPreview } from './templates/MakanPreview';
 import { LemburPreview } from './templates/LemburPreview';
 import { AkomodasiPreview } from './templates/AkomodasiPreview';
+import { PembelianPreview } from './templates/PembelianPreview';
 import { SignatureModal } from './components/SignatureModal';
 import { HistoryModal } from './components/HistoryModal';
 import {
   initialKosanData,
   initialMakanData,
   initialLemburData,
-  initialAkomodasiData
+  initialAkomodasiData,
+  initialPembelianData
 } from './utils/sampleData';
 import { handleDownloadPDF, handlePrintDocument } from './utils/pdfExport';
 import { saveDocument } from './api/client';
@@ -72,6 +75,7 @@ function MainApp() {
   const [makanData, setMakanData] = useState(initialMakanData);
   const [lemburData, setLemburData] = useState(initialLemburData);
   const [akomodasiData, setAkomodasiData] = useState(initialAkomodasiData);
+  const [pembelianData, setPembelianData] = useState(initialPembelianData);
 
   // Responsive default Zoom Level
   const [zoomLevel, setZoomLevel] = useState(0.85);
@@ -81,12 +85,13 @@ function MainApp() {
     if (typeof window !== 'undefined') {
       const isMobile = window.innerWidth < 640;
       const isTablet = window.innerWidth >= 640 && window.innerWidth < 1024;
+      const isLandscape = activeTab === 'lembur' || activeTab === 'akomodasi' || activeTab === 'pembelian';
       if (isMobile) {
-        setZoomLevel(activeTab === 'lembur' || activeTab === 'akomodasi' ? 0.35 : 0.45);
+        setZoomLevel(isLandscape ? 0.35 : 0.45);
       } else if (isTablet) {
-        setZoomLevel(activeTab === 'lembur' || activeTab === 'akomodasi' ? 0.65 : 0.75);
+        setZoomLevel(isLandscape ? 0.65 : 0.75);
       } else {
-        setZoomLevel(activeTab === 'lembur' || activeTab === 'akomodasi' ? 0.85 : 0.95);
+        setZoomLevel(isLandscape ? 0.85 : 0.95);
       }
     }
   }, [activeTab, viewMode]);
@@ -109,11 +114,12 @@ function MainApp() {
   // Zoom Controls
   const handleZoomIn = () => setZoomLevel(prev => Math.min(1.4, Math.round((prev + 0.1) * 10) / 10));
   const handleZoomOut = () => setZoomLevel(prev => Math.max(0.3, Math.round((prev - 0.1) * 10) / 10));
-  const handleResetZoom = () => setZoomLevel(activeTab === 'lembur' || activeTab === 'akomodasi' ? 0.85 : 0.95);
+  const handleResetZoom = () => setZoomLevel((activeTab === 'lembur' || activeTab === 'akomodasi' || activeTab === 'pembelian') ? 0.85 : 0.95);
   const handleFitPage = () => {
     if (typeof window !== 'undefined') {
       const isMobile = window.innerWidth < 640;
-      setZoomLevel(isMobile ? (activeTab === 'lembur' || activeTab === 'akomodasi' ? 0.35 : 0.45) : (activeTab === 'lembur' || activeTab === 'akomodasi' ? 0.75 : 0.85));
+      const isLandscape = activeTab === 'lembur' || activeTab === 'akomodasi' || activeTab === 'pembelian';
+      setZoomLevel(isMobile ? (isLandscape ? 0.35 : 0.45) : (isLandscape ? 0.75 : 0.85));
     }
   };
 
@@ -148,6 +154,8 @@ function MainApp() {
       setLemburData(prev => ({ ...prev, [targetField]: dataUrl }));
     } else if (activeTab === 'akomodasi') {
       setAkomodasiData(prev => ({ ...prev, [targetField]: dataUrl }));
+    } else if (activeTab === 'pembelian') {
+      setPembelianData(prev => ({ ...prev, [targetField]: dataUrl }));
     }
   };
 
@@ -158,6 +166,7 @@ function MainApp() {
       if (activeTab === 'makan') setMakanData(initialMakanData);
       if (activeTab === 'lembur') setLemburData(initialLemburData);
       if (activeTab === 'akomodasi') setAkomodasiData(initialAkomodasiData);
+      if (activeTab === 'pembelian') setPembelianData(initialPembelianData);
       showToast('Data contoh template berhasil dimuat!');
     }
   };
@@ -199,6 +208,10 @@ function MainApp() {
           (Number(it.fotocopy) || 0) +
           (Number(it.lainLain) || 0);
       }, 0);
+    } else if (activeTab === 'pembelian') {
+      currentData = pembelianData;
+      title = `Pembelian Barang - ${pembelianData.nama || 'Galih'} (${pembelianData.dept || 'Developer'})`;
+      total = (pembelianData.items || []).reduce((acc, it) => acc + ((Number(it.qty) || 0) * (Number(it.hargaSatuan) || 0)), 0);
     }
 
     const res = await saveDocument(activeTab, title, currentData, total);
@@ -236,6 +249,8 @@ function MainApp() {
       setLemburData({ ...initialLemburData, ...parsedData });
     } else if (targetType === 'akomodasi') {
       setAkomodasiData({ ...initialAkomodasiData, ...parsedData });
+    } else if (targetType === 'pembelian') {
+      setPembelianData({ ...initialPembelianData, ...parsedData });
     }
 
     showToast(`Dokumen "${doc.title || 'Draft'}" berhasil dimuat!`);
@@ -259,6 +274,9 @@ function MainApp() {
     } else if (activeTab === 'akomodasi') {
       filename = `Laporan_Akomodasi_${akomodasiData.nama || 'Pegawai'}_${akomodasiData.customer || 'Project'}.pdf`;
       orientation = 'landscape';
+    } else if (activeTab === 'pembelian') {
+      filename = `Permintaan_Pembelian_Barang_${pembelianData.nama || 'Staff'}_${pembelianData.tanggal || '2026'}.pdf`;
+      orientation = 'landscape';
     }
 
     try {
@@ -278,7 +296,7 @@ function MainApp() {
 
   // Browser Print with Auto-Orientation Lock
   const handlePrint = () => {
-    const orientation = (activeTab === 'lembur' || activeTab === 'akomodasi') ? 'landscape' : 'portrait';
+    const orientation = (activeTab === 'lembur' || activeTab === 'akomodasi' || activeTab === 'pembelian') ? 'landscape' : 'portrait';
     handlePrintDocument(orientation);
   };
 
@@ -364,6 +382,14 @@ function MainApp() {
                 onOpenSignatureModal={handleOpenSignature}
               />
             )}
+
+            {activeTab === 'pembelian' && (
+              <PembelianForm
+                data={pembelianData}
+                onChange={setPembelianData}
+                onOpenSignatureModal={handleOpenSignature}
+              />
+            )}
           </div>
         </section>
 
@@ -385,6 +411,8 @@ function MainApp() {
                   ? 'Landscape (1 Halaman)'
                   : activeTab === 'akomodasi'
                   ? 'Landscape (Multi-Halaman)'
+                  : activeTab === 'pembelian'
+                  ? 'Landscape (1 Halaman)'
                   : 'Portrait (2 Halaman)'}
               </span>
             </div>
@@ -443,6 +471,7 @@ function MainApp() {
               {activeTab === 'makan' && <MakanPreview data={makanData} />}
               {activeTab === 'lembur' && <LemburPreview data={lemburData} />}
               {activeTab === 'akomodasi' && <AkomodasiPreview data={akomodasiData} />}
+              {activeTab === 'pembelian' && <PembelianPreview data={pembelianData} />}
             </div>
           </div>
         </section>
