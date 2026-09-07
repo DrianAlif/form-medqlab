@@ -36,6 +36,34 @@
   .tabular-nums, table td, table th, .financial-figure {
     font-variant-numeric: tabular-nums;
   }
+
+  /* CRITICAL for html2canvas & table baseline rendering:
+     Override Tailwind preflight (which sets img to display: block) to display: inline-block */
+  img {
+    display: inline-block;
+  }
+}
+
+img {
+  display: inline-block;
+}
+
+/* ==========================================
+   EXACT TABLE STYLING FOR PDF SHEETS
+   Guarantees perfect vertical middle alignment across preview, print, and PDF export
+   ========================================== */
+.pdf-sheet table {
+  border-collapse: collapse;
+}
+
+.pdf-sheet table th,
+.pdf-sheet table td {
+  vertical-align: middle !important;
+  line-height: 1.25 !important;
+}
+
+.pdf-sheet table td .flex {
+  align-items: center;
 }
 
 /* Custom smooth thin scrollbars for editor and preview panes */
@@ -202,12 +230,11 @@
     print-color-adjust: exact !important;
   }
 
-  /* 2. Reset all app shell containers to pure white background */
+  /* 2. Reset app shell wrappers ONLY to pure white background (never broad div selector!) */
   #root,
-  body > div,
+  #root > div,
   main,
-  section,
-  div {
+  section {
     background: #ffffff !important;
     background-color: #ffffff !important;
     box-shadow: none !important;
@@ -332,8 +359,10 @@
   .bg-\[\#d9d9d9\] {
     background-color: #d9d9d9 !important;
   }
-  .bg-\[\#c00000\] {
+  .bg-\[\#c00000\],
+  .bg-\[\#c00000\] * {
     background-color: #c00000 !important;
+    color: #ffffff !important;
   }
 }
 

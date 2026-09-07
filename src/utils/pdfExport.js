@@ -19,27 +19,56 @@ export async function handleDownloadPDF({
     return false;
   }
 
-  // 1. Create clean off-screen sandbox to avoid zoom/transform distortion
+  // 1. Ensure fonts (e.g. Inter) are fully loaded so font metrics are accurate
+  if (document.fonts && document.fonts.ready) {
+    await document.fonts.ready;
+  }
+
+  // 2. Create clean off-screen sandbox to avoid zoom/transform distortion
   const offscreen = document.createElement('div');
   offscreen.style.position = 'fixed';
   offscreen.style.top = '0';
-  offscreen.style.left = '-99999px';
+  offscreen.style.left = '-9999px';
   offscreen.style.width = orientation === 'landscape' ? '1122px' : '794px';
   offscreen.style.background = '#ffffff';
-  offscreen.style.zIndex = '-99999';
+  offscreen.style.zIndex = '-9999';
   offscreen.style.margin = '0';
   offscreen.style.padding = '0';
 
-  // 2. Clone the container
+  // 3. Clone the container
   const clone = container.cloneNode(true);
   clone.style.transform = 'none';
   clone.style.margin = '0';
   clone.style.padding = '0';
+
+  // Critical: Remove box shadows, margins, and borders from sheets in the export clone to eliminate grey borders
+  const cloneSheets = clone.querySelectorAll('.pdf-sheet, .pdf-page-portrait, .pdf-page-landscape');
+  cloneSheets.forEach((s) => {
+    s.style.boxShadow = 'none';
+    s.style.margin = '0';
+    s.style.border = 'none';
+    s.style.outline = 'none';
+  });
+
   offscreen.appendChild(clone);
   document.body.appendChild(offscreen);
 
+  // 4. Inject style guard ensuring img is inline-block to protect html2canvas FontMetrics baseline calculation
+  const fontGuardStyle = document.createElement('style');
+  fontGuardStyle.id = 'html2canvas-font-guard';
+  fontGuardStyle.textContent = `
+    img {
+      display: inline-block !important;
+    }
+    .pdf-sheet table td, .pdf-sheet table th {
+      vertical-align: middle !important;
+      line-height: 1.25 !important;
+    }
+  `;
+  document.head.appendChild(fontGuardStyle);
+
   try {
-    // 3. Select all discrete sheets within the cloned tree
+    // 5. Select all discrete sheets within the cloned tree
     let sheets = Array.from(clone.querySelectorAll('.pdf-sheet'));
     if (sheets.length === 0) {
       sheets = Array.from(clone.querySelectorAll('.pdf-page-portrait, .pdf-page-landscape'));
@@ -88,7 +117,10 @@ export async function handleDownloadPDF({
     window.print();
     return false;
   } finally {
-    // Clean up temporary sandbox element
+    // Clean up temporary sandbox elements and font guard
+    if (fontGuardStyle.parentNode) {
+      fontGuardStyle.parentNode.removeChild(fontGuardStyle);
+    }
     if (document.body.contains(offscreen)) {
       document.body.removeChild(offscreen);
     }
