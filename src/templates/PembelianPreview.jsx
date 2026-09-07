@@ -56,18 +56,27 @@ export function PembelianPreview({ data = {} }) {
             </div>
 
             {/* Document Title */}
-            <div className="text-center my-5">
+            <div className="text-center my-4">
               <h1 className="text-[13px] font-extrabold uppercase tracking-wide underline underline-offset-4 text-black inline-block">
                 FORM PERMINTAAN PEMBELIAN BARANG
               </h1>
             </div>
 
-            {/* Main Items Table */}
-            <div className="border border-black overflow-hidden mb-5">
+            {/* Unified Table: Items + Signatures in One Continuous Grid */}
+            <div className="border border-black overflow-hidden mb-4">
               <table className="w-full border-collapse text-[9.5px]">
+                <colgroup>
+                  <col style={{ width: '36px' }} />
+                  <col />
+                  <col style={{ width: '45px' }} />
+                  <col style={{ width: '90px' }} />
+                  <col style={{ width: '95px' }} />
+                  <col style={{ width: '130px' }} />
+                  <col style={{ width: '140px' }} />
+                </colgroup>
                 <thead>
                   <tr className="border-b border-black text-center font-bold text-[9.5px]">
-                    <th rowSpan={2} className="border-r border-black p-1.5 w-10 align-middle">
+                    <th rowSpan={2} className="border-r border-black p-1.5 align-middle">
                       No
                     </th>
                     <th rowSpan={2} className="border-r border-black p-1.5 align-middle text-center">
@@ -128,47 +137,43 @@ export function PembelianPreview({ data = {} }) {
                     );
                   })}
 
-                  {/* Empty filler rows if table is small */}
-                  {items.length === 0 && (
-                    <tr className="border-b border-black h-8">
-                      <td colSpan={7} className="text-center text-slate-400 italic">
-                        Belum ada item barang yang dimasukkan.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* 3-Column Signatures Block (Diajukan, Direview, Disetujui) */}
-            <div className="w-full max-w-[620px] border border-black overflow-hidden text-[9.5px]">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b border-black font-bold">
-                    <th className="border-r border-black p-1 text-left px-2 w-1/3">
-                      Diajukan :
-                    </th>
-                    <th className="border-r border-black p-1 text-left px-2 w-1/3">
-                      Direview Oleh :
-                    </th>
-                    <th className="p-1 text-left px-2 w-1/3">
-                      Disetujui Oleh :
-                    </th>
+                  {/* Empty buffer row directly connecting items and signatures */}
+                  <tr className="border-b border-black h-5">
+                    <td className="border-r border-black">&nbsp;</td>
+                    <td className="border-r border-black">&nbsp;</td>
+                    <td className="border-r border-black">&nbsp;</td>
+                    <td className="border-r border-black">&nbsp;</td>
+                    <td className="border-r border-black">&nbsp;</td>
+                    <td className="border-r border-black">&nbsp;</td>
+                    <td>&nbsp;</td>
                   </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    {/* 1. Diajukan (Pemesan) */}
-                    <td className="border-r border-black p-2 align-bottom text-center">
-                      <div className="h-14 flex items-center justify-center mb-1">
+
+                  {/* Unified Signatures Header Row */}
+                  <tr className="border-b border-black font-bold text-[9.5px]">
+                    <td colSpan={2} className="border-r border-black p-1 text-left px-2">
+                      Diajukan :
+                    </td>
+                    <td colSpan={3} className="border-r border-black p-1 text-left px-2">
+                      Direview Oleh :
+                    </td>
+                    <td colSpan={2} className="p-1 text-left px-2">
+                      Disetujui Oleh :
+                    </td>
+                  </tr>
+
+                  {/* Unified Signatures Body Row (TTD & Names) */}
+                  <tr className="border-b border-black">
+                    {/* 1. Diajukan (Pemesan) - Spans colSpan 2 (No + Jenis Barang) */}
+                    <td colSpan={2} className="border-r border-black p-2 align-bottom text-center">
+                      <div className="h-16 flex items-center justify-center mb-1">
                         {data.diajukanSign ? (
                           <img
                             src={data.diajukanSign}
                             alt="Signature Diajukan"
-                            className="max-h-12 max-w-[120px] object-contain"
+                            className="max-h-14 max-w-[130px] object-contain"
                           />
                         ) : (
-                          <div className="h-10" />
+                          <div className="h-12" />
                         )}
                       </div>
                       <div className="font-semibold text-black underline underline-offset-2">
@@ -176,17 +181,17 @@ export function PembelianPreview({ data = {} }) {
                       </div>
                     </td>
 
-                    {/* 2. Direview Oleh */}
-                    <td className="border-r border-black p-2 align-bottom text-center">
-                      <div className="h-14 flex items-center justify-center mb-1">
+                    {/* 2. Direview Oleh - Spans colSpan 3 (Qty + Satuan + Total) */}
+                    <td colSpan={3} className="border-r border-black p-2 align-bottom text-center">
+                      <div className="h-16 flex items-center justify-center mb-1">
                         {data.direviewSign ? (
                           <img
                             src={data.direviewSign}
                             alt="Signature Direview"
-                            className="max-h-12 max-w-[120px] object-contain"
+                            className="max-h-14 max-w-[130px] object-contain"
                           />
                         ) : (
-                          <div className="h-10" />
+                          <div className="h-12" />
                         )}
                       </div>
                       <div className="font-semibold text-black underline underline-offset-2">
@@ -194,17 +199,17 @@ export function PembelianPreview({ data = {} }) {
                       </div>
                     </td>
 
-                    {/* 3. Disetujui Oleh (Direktur) */}
-                    <td className="p-2 align-bottom text-center">
-                      <div className="h-14 flex items-center justify-center mb-1">
+                    {/* 3. Disetujui Oleh (Direktur) - Spans colSpan 2 (Keperluan + Keterangan) */}
+                    <td colSpan={2} className="p-2 align-bottom text-center">
+                      <div className="h-16 flex items-center justify-center mb-1">
                         {data.disetujuiSign ? (
                           <img
                             src={data.disetujuiSign}
                             alt="Signature Disetujui"
-                            className="max-h-12 max-w-[120px] object-contain"
+                            className="max-h-14 max-w-[130px] object-contain"
                           />
                         ) : (
-                          <div className="h-10" />
+                          <div className="h-12" />
                         )}
                       </div>
                       <div className="font-semibold text-black underline underline-offset-2 min-h-[16px]">
@@ -213,15 +218,15 @@ export function PembelianPreview({ data = {} }) {
                     </td>
                   </tr>
 
-                  {/* Roles / Bottom Label Row */}
-                  <tr className="border-t border-black text-[9px] text-center font-normal">
-                    <td className="border-r border-black py-0.5">
+                  {/* Unified Signatures Bottom Roles Row */}
+                  <tr className="text-[9px] text-center font-normal">
+                    <td colSpan={2} className="border-r border-black py-0.5">
                       {data.diajukanRole || 'Pemesan'}
                     </td>
-                    <td className="border-r border-black py-0.5">
+                    <td colSpan={3} className="border-r border-black py-0.5">
                       {data.direviewRole || ''}
                     </td>
-                    <td className="py-0.5">
+                    <td colSpan={2} className="py-0.5">
                       {data.disetujuiRole || 'Direktur'}
                     </td>
                   </tr>
