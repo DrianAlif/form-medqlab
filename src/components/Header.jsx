@@ -1,6 +1,6 @@
 import React from 'react';
 import { Logo } from './Logo';
-import { Download, Printer, Save, FolderOpen, RotateCcw, Home, Utensils, CalendarDays, Receipt, ShoppingBag, Cloud, Edit3, Eye } from 'lucide-react';
+import { Download, Printer, Save, FolderOpen, RotateCcw, Home, Utensils, CalendarDays, Receipt, ShoppingBag, FileText, Cloud, Edit3, Eye } from 'lucide-react';
 
 export function Header({
   activeTab,
@@ -19,7 +19,8 @@ export function Header({
     { id: 'makan', label: '2. Uang Makan', icon: Utensils, badge: '2 Halaman' },
     { id: 'lembur', label: '3. Uang Lembur', icon: CalendarDays, badge: 'Landscape' },
     { id: 'akomodasi', label: '4. Laporan Akomodasi', icon: Receipt, badge: 'Landscape / Multi' },
-    { id: 'pembelian', label: '5. Pembelian Barang', icon: ShoppingBag, badge: 'Landscape' }
+    { id: 'pembelian', label: '5. Pembelian Barang', icon: ShoppingBag, badge: 'Landscape' },
+    { id: 'surat', label: '6. Surat Tugas / SPPD', icon: FileText, badge: 'Portrait' }
   ];
 
   return (

@@ -238,3 +238,36 @@ export const initialPembelianData = {
   disetujuiRole: 'Direktur',
   disetujuiSign: ''
 };
+
+// 6. Form Surat Tugas & SPPD Sample Data
+export const initialSuratData = {
+  templateType: 'sppd', // 'sppd' | 'surat-tugas' | 'spk'
+  nomorSurat: '014/APS-DIR/SPPD/IX/2026',
+  tanggalSurat: '2026-09-20',
+  kotaDikeluarkan: 'Jakarta',
+  
+  // Pejabat yang Memberi Tugas / TTD
+  pejabatNama: 'Tri Prasetyo, S.Kom',
+  pejabatJabatan: 'Direktur Operasional',
+  pejabatNip: 'APS-DIR-002',
+  pejabatSign: SAMPLE_SIGNATURE_TRI,
+  
+  // Personel yang Melakukan Perjalanan / Ditugaskan (Assign)
+  personelNama: 'Alif Drian',
+  personelNik: 'APS-2026002',
+  personelJabatan: 'Technical Support Officer (TSO)',
+  personelDepartment: 'Operasional',
+  personelSign: SAMPLE_SIGNATURE_ALIF,
+  
+  // Detail Perjalanan & Penugasan
+  maksudTugas: 'Melaksanakan instalasi on-site, pendampingan implementasi Sistem Informasi Manajemen Rumah Sakit (LIS MedQLab), serta bridging antrean & klaim BPJS Kesehatan.',
+  lokasiTujuan: 'RSUP Nasional Dr. Cipto Mangunkusumo (RSCM), Jakarta Pusat',
+  kotaAsal: 'Bandung / Kantor Operasional',
+  alatTransportasi: 'Kereta Cepat Whoosh / Mobil Operasional',
+  tanggalBerangkat: '2026-09-20',
+  tanggalKembali: '2026-09-25',
+  lamaHari: '6 (Enam) Hari',
+  bebanAnggaran: 'Anggaran Proyek Implementasi RSCM - PT Applimetis Parama Solusi',
+  keteranganLain: 'Biaya transportasi, akomodasi, dan konsumsi dibebankan pada pos anggaran proyek penugasan resmi sesuai ketentuan perusahaan.'
+};
+

@@ -1,9 +1,11 @@
 import React from 'react';
 import { Plus, Trash2, PenTool, ShoppingBag, Calculator, Sparkles, CheckCircle2 } from 'lucide-react';
 import { formatRupiah, parseRupiahInput } from '../utils/currency';
-import { formatShortIndoDate } from '../utils/dateUtils';
+import { formatShortIndoDate, getTodayDateString } from '../utils/dateUtils';
+import { SignatureActionButton } from '../components/SignatureActionButton';
+import { AssignEmployeeButton } from '../components/AssignEmployeeButton';
 
-export function PembelianForm({ data = {}, onChange, onOpenSignatureModal }) {
+export function PembelianForm({ data = {}, onChange, onOpenSignatureModal, onOpenShareLink }) {
   const updateField = (field, value) => {
     onChange({ ...data, [field]: value });
   };
@@ -71,12 +73,12 @@ export function PembelianForm({ data = {}, onChange, onOpenSignatureModal }) {
             <div className="flex justify-between items-center mb-1">
               <label className="block font-semibold text-slate-600">Tanggal Pengajuan</label>
               <span className="text-[10px] text-slate-400 font-mono">
-                Format: {formatShortIndoDate(data.tanggal) || '6-Agu-26'}
+                Format: {formatShortIndoDate(data.tanggal || getTodayDateString())}
               </span>
             </div>
             <input
               type="date"
-              value={data.tanggal || ''}
+              value={data.tanggal || getTodayDateString()}
               onChange={(e) => updateField('tanggal', e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
             />
@@ -96,9 +98,25 @@ export function PembelianForm({ data = {}, onChange, onOpenSignatureModal }) {
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-600 mb-1">
-              Nama Pemohon (Pemesan)
-            </label>
+            <div className="flex items-center justify-between gap-1 mb-1">
+              <label className="block font-semibold text-slate-600">
+                Nama Pemohon (Pemesan)
+              </label>
+              <AssignEmployeeButton
+                currentValue={data.nama}
+                slotTitle="Pemesan"
+                onSelect={(emp) => {
+                  onChange({
+                    ...data,
+                    nama: emp.name,
+                    diajukanNama: emp.name,
+                    dept: emp.department || data.dept,
+                    diajukanRole: emp.position || data.diajukanRole || 'Pemesan'
+                  });
+                }}
+                onClear={() => updateField('nama', '')}
+              />
+            </div>
             <input
               type="text"
               value={data.nama || ''}
@@ -278,9 +296,30 @@ export function PembelianForm({ data = {}, onChange, onOpenSignatureModal }) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* 1. Diajukan (Pemesan) */}
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
-            <span className="text-[11px] font-bold text-slate-700 block">
-              1. Diajukan (Pemesan)
-            </span>
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[11px] font-bold text-slate-700 block">
+                1. Diajukan (Pemesan)
+              </span>
+              <AssignEmployeeButton
+                currentValue={data.diajukanNama}
+                slotTitle="Pemesan"
+                onSelect={(emp) => {
+                  onChange({
+                    ...data,
+                    diajukanNama: emp.name,
+                    nama: data.nama || emp.name,
+                    diajukanRole: emp.position || data.diajukanRole || 'Pemesan'
+                  });
+                }}
+                onClear={() => {
+                  onChange({
+                    ...data,
+                    diajukanNama: '',
+                    diajukanRole: 'Pemesan'
+                  });
+                }}
+              />
+            </div>
             <div>
               <label className="block text-[10px] text-slate-500 font-semibold mb-0.5">Nama Pemesan</label>
               <input
@@ -301,21 +340,43 @@ export function PembelianForm({ data = {}, onChange, onOpenSignatureModal }) {
                 className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-white"
               />
             </div>
-            <button
-              type="button"
-              onClick={() => onOpenSignatureModal('diajukanSign', data.diajukanNama || 'Pemesan')}
-              className="w-full flex items-center justify-center gap-1.5 text-xs bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 py-1.5 rounded transition font-medium"
-            >
-              <PenTool className="w-3.5 h-3.5" />
-              {data.diajukanSign ? 'Ubah TTD Diajukan' : 'Beri TTD Diajukan'}
-            </button>
+            <SignatureActionButton
+              targetField="diajukanSign"
+              assignedName={data.diajukanNama || 'Pemesan'}
+              slotType="diajukan"
+              existingSignature={data.diajukanSign}
+              onOpenSignatureModal={onOpenSignatureModal}
+              onOpenShareLink={onOpenShareLink}
+              title={data.diajukanNama || 'Pemesan'}
+              buttonLabel={data.diajukanSign ? 'Ubah TTD Diajukan' : 'Beri TTD Diajukan'}
+            />
           </div>
 
           {/* 2. Direview Oleh */}
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
-            <span className="text-[11px] font-bold text-slate-700 block">
-              2. Direview Oleh
-            </span>
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[11px] font-bold text-slate-700 block">
+                2. Direview Oleh
+              </span>
+              <AssignEmployeeButton
+                currentValue={data.direviewNama}
+                slotTitle="Reviewer"
+                onSelect={(emp) => {
+                  onChange({
+                    ...data,
+                    direviewNama: emp.name,
+                    direviewRole: emp.position || data.direviewRole || 'Reviewer'
+                  });
+                }}
+                onClear={() => {
+                  onChange({
+                    ...data,
+                    direviewNama: '',
+                    direviewRole: ''
+                  });
+                }}
+              />
+            </div>
             <div>
               <label className="block text-[10px] text-slate-500 font-semibold mb-0.5">Nama Reviewer</label>
               <input
@@ -336,21 +397,43 @@ export function PembelianForm({ data = {}, onChange, onOpenSignatureModal }) {
                 className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-white"
               />
             </div>
-            <button
-              type="button"
-              onClick={() => onOpenSignatureModal('direviewSign', data.direviewNama || 'Reviewer')}
-              className="w-full flex items-center justify-center gap-1.5 text-xs bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 py-1.5 rounded transition font-medium"
-            >
-              <PenTool className="w-3.5 h-3.5" />
-              {data.direviewSign ? 'Ubah TTD Direview' : 'Beri TTD Direview'}
-            </button>
+            <SignatureActionButton
+              targetField="direviewSign"
+              assignedName={data.direviewNama || 'Reviewer'}
+              slotType="review"
+              existingSignature={data.direviewSign}
+              onOpenSignatureModal={onOpenSignatureModal}
+              onOpenShareLink={onOpenShareLink}
+              title={data.direviewNama || 'Reviewer'}
+              buttonLabel={data.direviewSign ? 'Ubah TTD Direview' : 'Beri TTD Direview'}
+            />
           </div>
 
           {/* 3. Disetujui Oleh (Direktur) */}
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
-            <span className="text-[11px] font-bold text-slate-700 block">
-              3. Disetujui Oleh
-            </span>
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[11px] font-bold text-slate-700 block">
+                3. Disetujui Oleh
+              </span>
+              <AssignEmployeeButton
+                currentValue={data.disetujuiNama}
+                slotTitle="Disetujui Oleh"
+                onSelect={(emp) => {
+                  onChange({
+                    ...data,
+                    disetujuiNama: emp.name,
+                    disetujuiRole: emp.position || data.disetujuiRole || 'Direktur'
+                  });
+                }}
+                onClear={() => {
+                  onChange({
+                    ...data,
+                    disetujuiNama: '',
+                    disetujuiRole: 'Direktur'
+                  });
+                }}
+              />
+            </div>
             <div>
               <label className="block text-[10px] text-slate-500 font-semibold mb-0.5">Nama Pejabat / Direktur</label>
               <input
@@ -371,14 +454,16 @@ export function PembelianForm({ data = {}, onChange, onOpenSignatureModal }) {
                 className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-white"
               />
             </div>
-            <button
-              type="button"
-              onClick={() => onOpenSignatureModal('disetujuiSign', data.disetujuiNama || 'Direktur')}
-              className="w-full flex items-center justify-center gap-1.5 text-xs bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 py-1.5 rounded transition font-medium"
-            >
-              <PenTool className="w-3.5 h-3.5" />
-              {data.disetujuiSign ? 'Ubah TTD Disetujui' : 'Beri TTD Disetujui'}
-            </button>
+            <SignatureActionButton
+              targetField="disetujuiSign"
+              assignedName={data.disetujuiNama || 'Direktur'}
+              slotType="direktur"
+              existingSignature={data.disetujuiSign}
+              onOpenSignatureModal={onOpenSignatureModal}
+              onOpenShareLink={onOpenShareLink}
+              title={data.disetujuiNama || 'Direktur'}
+              buttonLabel={data.disetujuiSign ? 'Ubah TTD Disetujui' : 'Beri TTD Disetujui'}
+            />
           </div>
         </div>
       </div>

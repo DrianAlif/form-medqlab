@@ -2,18 +2,20 @@ import React, { useState } from 'react';
 import { Plus, Trash2, PenTool, Calendar, Sparkles, Clock, CheckCircle, Wand2, CalendarRange, Filter } from 'lucide-react';
 import { formatSlashDate, getIndonesianDayName } from '../utils/dateUtils';
 import { generateOvertimeEntries, getHolidayInfo, MONTH_NAMES_ID } from '../utils/holidays';
+import { SignatureActionButton } from '../components/SignatureActionButton';
+import { AssignEmployeeButton } from '../components/AssignEmployeeButton';
 
-export function LemburForm({ data, onChange, onOpenSignatureModal }) {
+export function LemburForm({ data, onChange, onOpenSignatureModal, onOpenShareLink }) {
   // Batch Generator State
   const now = new Date();
   const defaultYear = now.getFullYear();
   const defaultMonth = now.getMonth(); // 0-indexed
 
   const [genMode, setGenMode] = useState('month'); // 'month' or 'range'
-  const [selectedYear, setSelectedYear] = useState(2026);
-  const [selectedMonth, setSelectedMonth] = useState(7); // August (0-indexed = 7)
-  const [rangeStart, setRangeStart] = useState('2026-07-18');
-  const [rangeEnd, setRangeEnd] = useState('2026-08-17');
+  const [selectedYear, setSelectedYear] = useState(defaultYear);
+  const [selectedMonth, setSelectedMonth] = useState(defaultMonth);
+  const [rangeStart, setRangeStart] = useState(`${defaultYear}-${String(defaultMonth + 1).padStart(2, '0')}-01`);
+  const [rangeEnd, setRangeEnd] = useState(`${defaultYear}-${String(defaultMonth + 1).padStart(2, '0')}-28`);
 
   const [includeSaturday, setIncludeSaturday] = useState(true);
   const [includeSunday, setIncludeSunday] = useState(true);
@@ -38,12 +40,14 @@ export function LemburForm({ data, onChange, onOpenSignatureModal }) {
   };
 
   const addItem = () => {
+    const todayFormatted = formatSlashDate(new Date());
+    const dayName = getIndonesianDayName(new Date()) || 'Hari';
     const newItems = [
       ...(data.items || []),
       {
         id: `l-${Date.now()}`,
-        tanggal: '18/07/2026',
-        hari: 'Sabtu',
+        tanggal: todayFormatted || '18/07/2026',
+        hari: dayName,
         keterangan: 'Support RSCM',
         waktu: '09.00 - 17.00',
         hariCount: 1,
@@ -341,7 +345,24 @@ export function LemburForm({ data, onChange, onOpenSignatureModal }) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Nama Pegawai</label>
+            <div className="flex items-center justify-between gap-1 mb-1">
+              <label className="block text-xs font-semibold text-slate-600">Nama Pegawai</label>
+              <AssignEmployeeButton
+                currentValue={data.nama}
+                slotTitle="Pegawai Lembur"
+                onSelect={(emp) => {
+                  onChange({
+                    ...data,
+                    nama: emp.name,
+                    dibuatOlehNama: emp.name,
+                    nik: emp.nik || data.nik,
+                    jabatan: emp.position || data.jabatan,
+                    department: emp.department || data.department
+                  });
+                }}
+                onClear={() => updateField('nama', '')}
+              />
+            </div>
             <input
               type="text"
               value={data.nama || ''}
@@ -402,7 +423,24 @@ export function LemburForm({ data, onChange, onOpenSignatureModal }) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Dibuat Oleh */}
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
-              <span className="text-[11px] font-bold text-slate-700">1. Dibuat Oleh</span>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-bold text-slate-700">1. Dibuat Oleh</span>
+                <AssignEmployeeButton
+                  currentValue={data.dibuatOlehNama || data.nama}
+                  slotTitle="Dibuat Oleh"
+                  onSelect={(emp) => {
+                    onChange({
+                      ...data,
+                      dibuatOlehNama: emp.name,
+                      nama: data.nama || emp.name,
+                      nik: data.nik || emp.nik,
+                      jabatan: data.jabatan || emp.position,
+                      department: data.department || emp.department
+                    });
+                  }}
+                  onClear={() => updateField('dibuatOlehNama', '')}
+                />
+              </div>
               <input
                 type="text"
                 value={data.dibuatOlehNama || data.nama || ''}
@@ -410,19 +448,28 @@ export function LemburForm({ data, onChange, onOpenSignatureModal }) {
                 placeholder="Nama Pemohon"
                 className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-white"
               />
-              <button
-                type="button"
-                onClick={() => onOpenSignatureModal('dibuatOlehSign', data.dibuatOlehNama || data.nama)}
-                className="w-full flex items-center justify-center gap-1.5 text-xs bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 py-1.5 rounded transition"
-              >
-                <PenTool className="w-3.5 h-3.5" />
-                {data.dibuatOlehSign ? 'Ubah TTD' : 'Beri TTD'}
-              </button>
+              <SignatureActionButton
+                targetField="dibuatOlehSign"
+                assignedName={data.dibuatOlehNama || data.nama}
+                slotType="dibuat"
+                existingSignature={data.dibuatOlehSign}
+                onOpenSignatureModal={onOpenSignatureModal}
+                onOpenShareLink={onOpenShareLink}
+                title={data.dibuatOlehNama || data.nama || 'Pemohon'}
+              />
             </div>
 
             {/* Disetujui Oleh */}
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
-              <span className="text-[11px] font-bold text-slate-700">2. Disetujui Oleh (HOD)</span>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-bold text-slate-700">2. Disetujui Oleh (HOD)</span>
+                <AssignEmployeeButton
+                  currentValue={data.disetujuiOlehNama}
+                  slotTitle="Disetujui Oleh (HOD)"
+                  onSelect={(emp) => updateField('disetujuiOlehNama', emp.name)}
+                  onClear={() => updateField('disetujuiOlehNama', '')}
+                />
+              </div>
               <input
                 type="text"
                 value={data.disetujuiOlehNama || ''}
@@ -430,19 +477,28 @@ export function LemburForm({ data, onChange, onOpenSignatureModal }) {
                 placeholder="Nama HOD"
                 className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-white"
               />
-              <button
-                type="button"
-                onClick={() => onOpenSignatureModal('disetujuiOlehSign', data.disetujuiOlehNama)}
-                className="w-full flex items-center justify-center gap-1.5 text-xs bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 py-1.5 rounded transition"
-              >
-                <PenTool className="w-3.5 h-3.5" />
-                {data.disetujuiOlehSign ? 'Ubah TTD' : 'Beri TTD'}
-              </button>
+              <SignatureActionButton
+                targetField="disetujuiOlehSign"
+                assignedName={data.disetujuiOlehNama}
+                slotType="hod"
+                existingSignature={data.disetujuiOlehSign}
+                onOpenSignatureModal={onOpenSignatureModal}
+                onOpenShareLink={onOpenShareLink}
+                title={data.disetujuiOlehNama || 'HOD'}
+              />
             </div>
 
             {/* Diketahui Oleh */}
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
-              <span className="text-[11px] font-bold text-slate-700">3. Diketahui Oleh</span>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-bold text-slate-700">3. Diketahui Oleh</span>
+                <AssignEmployeeButton
+                  currentValue={data.diketahuiOlehNama}
+                  slotTitle="Diketahui Oleh"
+                  onSelect={(emp) => updateField('diketahuiOlehNama', emp.name)}
+                  onClear={() => updateField('diketahuiOlehNama', '')}
+                />
+              </div>
               <input
                 type="text"
                 value={data.diketahuiOlehNama || ''}
@@ -450,14 +506,15 @@ export function LemburForm({ data, onChange, onOpenSignatureModal }) {
                 placeholder="Nama Pejabat"
                 className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-white"
               />
-              <button
-                type="button"
-                onClick={() => onOpenSignatureModal('diketahuiOlehSign', data.diketahuiOlehNama)}
-                className="w-full flex items-center justify-center gap-1.5 text-xs bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 py-1.5 rounded transition"
-              >
-                <PenTool className="w-3.5 h-3.5" />
-                {data.diketahuiOlehSign ? 'Ubah TTD' : 'Beri TTD'}
-              </button>
+              <SignatureActionButton
+                targetField="diketahuiOlehSign"
+                assignedName={data.diketahuiOlehNama}
+                slotType="direktur"
+                existingSignature={data.diketahuiOlehSign}
+                onOpenSignatureModal={onOpenSignatureModal}
+                onOpenShareLink={onOpenShareLink}
+                title={data.diketahuiOlehNama || 'Direktur'}
+              />
             </div>
           </div>
         </div>

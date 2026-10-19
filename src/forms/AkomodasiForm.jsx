@@ -3,8 +3,11 @@ import { Plus, Trash2, PenTool, Upload, Image as ImageIcon, ArrowUp, ArrowDown, 
 import { formatRupiah } from '../utils/currency';
 import { processUploadedFile } from '../utils/fileUploadHelper';
 import { getMonthPeriodInfo, getCustomRangeInfo } from '../utils/datePeriod';
+import { getTodayIndonesianDate } from '../utils/dateUtils';
+import { SignatureActionButton } from '../components/SignatureActionButton';
+import { AssignEmployeeButton } from '../components/AssignEmployeeButton';
 
-export function AkomodasiForm({ data, onChange, onOpenSignatureModal }) {
+export function AkomodasiForm({ data, onChange, onOpenSignatureModal, onOpenShareLink }) {
   const [isProcessingFile, setIsProcessingFile] = useState(false);
 
   const updateField = (field, value) => {
@@ -283,7 +286,7 @@ export function AkomodasiForm({ data, onChange, onOpenSignatureModal }) {
             <label className="block font-semibold text-slate-600 mb-1">Tanggal Dokumen / Pengajuan</label>
             <input
               type="text"
-              value={data.tanggalDokumen || ''}
+              value={data.tanggalDokumen || getTodayIndonesianDate()}
               onChange={(e) => updateField('tanggalDokumen', e.target.value)}
               placeholder="Contoh: 31 Agustus 2026"
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
@@ -812,27 +815,44 @@ export function AkomodasiForm({ data, onChange, onOpenSignatureModal }) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Dibuat Oleh */}
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
-            <span className="text-[11px] font-bold text-slate-700">1. Dibuat Oleh (Pemohon)</span>
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[11px] font-bold text-slate-700">1. Dibuat Oleh (Pemohon)</span>
+              <AssignEmployeeButton
+                currentValue={data.dibuatOlehNama}
+                slotTitle="Pemohon"
+                onSelect={(emp) => updateField('dibuatOlehNama', emp.name)}
+                onClear={() => updateField('dibuatOlehNama', '')}
+              />
+            </div>
             <input
               type="text"
               value={data.dibuatOlehNama || ''}
               onChange={(e) => updateField('dibuatOlehNama', e.target.value)}
-              placeholder="M. Prahmadyan"
+              placeholder="Nama Pemohon"
               className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-white"
             />
-            <button
-              type="button"
-              onClick={() => onOpenSignatureModal('dibuatOlehSign', data.dibuatOlehNama || 'M. Prahmadyan')}
-              className="w-full flex items-center justify-center gap-1.5 text-xs bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 py-1.5 rounded transition"
-            >
-              <PenTool className="w-3.5 h-3.5" />
-              {data.dibuatOlehSign ? 'Ubah TTD' : 'Beri TTD'}
-            </button>
+            <SignatureActionButton
+              targetField="dibuatOlehSign"
+              assignedName={data.dibuatOlehNama || 'Pemohon'}
+              slotType="dibuat"
+              existingSignature={data.dibuatOlehSign}
+              onOpenSignatureModal={onOpenSignatureModal}
+              onOpenShareLink={onOpenShareLink}
+              title={data.dibuatOlehNama || 'Pemohon'}
+            />
           </div>
 
           {/* Diketahui Oleh */}
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
-            <span className="text-[11px] font-bold text-slate-700">2. Diketahui Oleh</span>
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[11px] font-bold text-slate-700">2. Diketahui Oleh</span>
+              <AssignEmployeeButton
+                currentValue={data.diketahuiOlehNama}
+                slotTitle="Diketahui Oleh"
+                onSelect={(emp) => updateField('diketahuiOlehNama', emp.name)}
+                onClear={() => updateField('diketahuiOlehNama', '')}
+              />
+            </div>
             <input
               type="text"
               value={data.diketahuiOlehNama || ''}
@@ -840,19 +860,28 @@ export function AkomodasiForm({ data, onChange, onOpenSignatureModal }) {
               placeholder="Nama Pejabat Terkait"
               className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-white"
             />
-            <button
-              type="button"
-              onClick={() => onOpenSignatureModal('diketahuiOlehSign', data.diketahuiOlehNama || 'Pejabat')}
-              className="w-full flex items-center justify-center gap-1.5 text-xs bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 py-1.5 rounded transition"
-            >
-              <PenTool className="w-3.5 h-3.5" />
-              {data.diketahuiOlehSign ? 'Ubah TTD' : 'Beri TTD'}
-            </button>
+            <SignatureActionButton
+              targetField="diketahuiOlehSign"
+              assignedName={data.diketahuiOlehNama}
+              slotType="diketahui"
+              existingSignature={data.diketahuiOlehSign}
+              onOpenSignatureModal={onOpenSignatureModal}
+              onOpenShareLink={onOpenShareLink}
+              title={data.diketahuiOlehNama || 'Pejabat Terkait'}
+            />
           </div>
 
           {/* Disetujui Oleh */}
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
-            <span className="text-[11px] font-bold text-slate-700">3. Disetujui Oleh (HOD)</span>
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[11px] font-bold text-slate-700">3. Disetujui Oleh (HOD)</span>
+              <AssignEmployeeButton
+                currentValue={data.disetujuiOlehNama}
+                slotTitle="Disetujui Oleh (HOD)"
+                onSelect={(emp) => updateField('disetujuiOlehNama', emp.name)}
+                onClear={() => updateField('disetujuiOlehNama', '')}
+              />
+            </div>
             <input
               type="text"
               value={data.disetujuiOlehNama || ''}
@@ -860,14 +889,15 @@ export function AkomodasiForm({ data, onChange, onOpenSignatureModal }) {
               placeholder="Nama Pejabat / HOD"
               className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-white"
             />
-            <button
-              type="button"
-              onClick={() => onOpenSignatureModal('disetujuiOlehSign', data.disetujuiOlehNama || 'Disetujui Oleh')}
-              className="w-full flex items-center justify-center gap-1.5 text-xs bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 py-1.5 rounded transition"
-            >
-              <PenTool className="w-3.5 h-3.5" />
-              {data.disetujuiOlehSign ? 'Ubah TTD' : 'Beri TTD'}
-            </button>
+            <SignatureActionButton
+              targetField="disetujuiOlehSign"
+              assignedName={data.disetujuiOlehNama}
+              slotType="hod"
+              existingSignature={data.disetujuiOlehSign}
+              onOpenSignatureModal={onOpenSignatureModal}
+              onOpenShareLink={onOpenShareLink}
+              title={data.disetujuiOlehNama || 'HOD'}
+            />
           </div>
         </div>
       </div>

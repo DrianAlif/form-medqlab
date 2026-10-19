@@ -5,19 +5,27 @@ import { MakanForm } from './forms/MakanForm';
 import { LemburForm } from './forms/LemburForm';
 import { AkomodasiForm } from './forms/AkomodasiForm';
 import { PembelianForm } from './forms/PembelianForm';
+import { SuratForm } from './forms/SuratForm';
 import { KosanPreview } from './templates/KosanPreview';
 import { MakanPreview } from './templates/MakanPreview';
 import { LemburPreview } from './templates/LemburPreview';
 import { AkomodasiPreview } from './templates/AkomodasiPreview';
 import { PembelianPreview } from './templates/PembelianPreview';
+import { SuratPreview } from './templates/SuratPreview';
 import { SignatureModal } from './components/SignatureModal';
 import { HistoryModal } from './components/HistoryModal';
+import { PublicSigningPage } from './components/PublicSigningPage';
+import { ShareSignLinkModal } from './components/ShareSignLinkModal';
+import { EmployeeProvider, useHRIS } from './context/EmployeeContext';
+import { canSignSlot } from './utils/signaturePermission';
+import { getRecentSignTokens } from './services/publicSignService';
 import {
   initialKosanData,
   initialMakanData,
   initialLemburData,
   initialAkomodasiData,
-  initialPembelianData
+  initialPembelianData,
+  initialSuratData
 } from './utils/sampleData';
 import { handleDownloadPDF, handlePrintDocument } from './utils/pdfExport';
 import { saveDocument } from './api/client';
@@ -68,7 +76,17 @@ class ErrorBoundary extends Component {
 }
 
 function MainApp() {
-  const [activeTab, setActiveTab] = useState('kosan'); // 'kosan', 'makan', 'lembur', 'akomodasi'
+  // Check if opened via Public Guest Signing Link (from WhatsApp or external link)
+  const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const signToken = urlParams?.get('signToken');
+
+  if (signToken) {
+    return <PublicSigningPage token={signToken} />;
+  }
+
+  const { currentUser } = useHRIS();
+
+  const [activeTab, setActiveTab] = useState('kosan'); // 'kosan' | 'makan' | 'lembur' | 'akomodasi' | 'pembelian' | 'surat'
   const [viewMode, setViewMode] = useState('form'); // 'form' | 'preview' (For mobile/tablet < lg)
   
   const [kosanData, setKosanData] = useState(initialKosanData);
@@ -76,6 +94,7 @@ function MainApp() {
   const [lemburData, setLemburData] = useState(initialLemburData);
   const [akomodasiData, setAkomodasiData] = useState(initialAkomodasiData);
   const [pembelianData, setPembelianData] = useState(initialPembelianData);
+  const [suratData, setSuratData] = useState(initialSuratData);
 
   // Responsive default Zoom Level
   const [zoomLevel, setZoomLevel] = useState(0.85);
@@ -102,6 +121,18 @@ function MainApp() {
     targetField: '',
     title: ''
   });
+
+  const [shareSignModal, setShareSignModal] = useState({
+    isOpen: false,
+    slotField: '',
+    slotTitle: 'Tanda Tangan',
+    assignedName: '',
+    formCategory: '',
+    docTitle: '',
+    totalAmount: 0,
+    docDetails: {}
+  });
+
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [toast, setToast] = useState(null);
@@ -123,8 +154,14 @@ function MainApp() {
     }
   };
 
-  // Open Signature Modal
-  const handleOpenSignature = (targetField, title = '') => {
+  // Open Signature Modal with Role & Assignment Guard
+  const handleOpenSignature = (targetField, title = '', slotType = 'general', assignedName = '') => {
+    if (slotType && slotType !== 'general') {
+      if (!canSignSlot(currentUser, assignedName, slotType)) {
+        alert(`Akses Terkunci: Hanya Admin atau ${assignedName ? `"${assignedName}"` : 'pejabat yang di-assign'} yang memiliki wewenang menandatangani.`);
+        return;
+      }
+    }
     setSigModal({
       isOpen: true,
       targetField,
@@ -156,8 +193,169 @@ function MainApp() {
       setAkomodasiData(prev => ({ ...prev, [targetField]: dataUrl }));
     } else if (activeTab === 'pembelian') {
       setPembelianData(prev => ({ ...prev, [targetField]: dataUrl }));
+    } else if (activeTab === 'surat') {
+      setSuratData(prev => ({ ...prev, [targetField]: dataUrl }));
     }
   };
+
+  // Open 1-Hour Guest Signing Link Modal (WhatsApp Sharing)
+  const handleOpenShareSign = (slotField, slotTitle, assignedName) => {
+    let cat = 'Dokumen Resmi';
+    let title = 'Pengajuan Dokumen';
+    let total = 0;
+    let details = {};
+
+    if (activeTab === 'kosan') {
+      cat = 'Uang Kosan';
+      title = `Pengajuan Kosan - ${kosanData.rumahSakit || 'RSCM'}`;
+      const pCats = getNormalizedParentCategories(kosanData);
+      total = pCats.reduce((accP, p) => accP + (p.subCategories || []).reduce((accS, s) => accS + (s.items || []).reduce((accI, it) => accI + ((Number(it.qty) || 0) * (Number(it.hargaSatuan) || 0)), 0), 0), 0);
+      details = kosanData;
+    } else if (activeTab === 'makan') {
+      cat = 'Uang Makan';
+      title = `Pengajuan Makan - ${makanData.dibayarkanKepada || 'Tim'}`;
+      total = (makanData.items || []).reduce((acc, it) => acc + ((Number(it.qty || it.porsi) || 0) * (Number(it.hargaSatuan) || 0)), 0);
+      details = makanData;
+    } else if (activeTab === 'lembur') {
+      cat = 'Uang Lembur';
+      title = `Lembur - ${lemburData.nama || 'Pegawai'}`;
+      total = (lemburData.items || []).reduce((acc, it) => acc + (Number(it.jamCount) || 0), 0);
+      details = lemburData;
+    } else if (activeTab === 'akomodasi') {
+      cat = 'Laporan Akomodasi';
+      title = `Akomodasi - ${akomodasiData.nama || 'Pegawai'} (${akomodasiData.customer || 'Project'})`;
+      total = (akomodasiData.items || []).reduce((acc, it) => {
+        return acc + (Number(it.bensin) || 0) +
+          (Number(it.tolParkir) || 0) +
+          (Number(it.pjs) || 0) +
+          (Number(it.hotel) || 0) +
+          (Number(it.entertaint) || 0) +
+          (Number(it.tiket) || 0) +
+          (Number(it.fotocopy) || 0) +
+          (Number(it.lainLain) || 0);
+      }, 0);
+      details = akomodasiData;
+    } else if (activeTab === 'pembelian') {
+      cat = 'Pembelian Barang';
+      title = `Pembelian Barang - ${pembelianData.nama || 'Pemesan'}`;
+      total = (pembelianData.items || []).reduce((acc, it) => acc + ((Number(it.qty) || 0) * (Number(it.hargaSatuan) || 0)), 0);
+      details = pembelianData;
+    } else if (activeTab === 'surat') {
+      cat = 'Surat Tugas & SPPD';
+      title = `Surat Tugas - ${suratData.personelNama || 'Personel'}`;
+      details = suratData;
+    }
+
+    setShareSignModal({
+      isOpen: true,
+      slotField,
+      slotTitle: slotTitle || 'Tanda Tangan',
+      assignedName: assignedName || '',
+      formCategory: cat,
+      docTitle: title,
+      totalAmount: total,
+      docDetails: details
+    });
+  };
+
+  // Immediate callback when public signature received from modal's live listener
+  const handleSignatureReceivedFromShare = (signature, signerName, slotFieldParam) => {
+    const slotField = slotFieldParam || shareSignModal.slotField;
+    if (!slotField) return;
+
+    if (activeTab === 'kosan') {
+      setKosanData(prev => ({ ...prev, [slotField]: signature }));
+    } else if (activeTab === 'makan') {
+      setMakanData(prev => ({ ...prev, [slotField]: signature }));
+    } else if (activeTab === 'lembur') {
+      setLemburData(prev => ({ ...prev, [slotField]: signature }));
+    } else if (activeTab === 'akomodasi') {
+      setAkomodasiData(prev => ({ ...prev, [slotField]: signature }));
+    } else if (activeTab === 'pembelian') {
+      setPembelianData(prev => ({ ...prev, [slotField]: signature }));
+    } else if (activeTab === 'surat') {
+      setSuratData(prev => ({ ...prev, [slotField]: signature }));
+    }
+
+    showToast(`Tanda tangan untuk ${shareSignModal.slotTitle || slotField} berhasil diterima dari WhatsApp!`, 'success');
+  };
+
+  // Background Auto-Sync: Polls server every 3s for signatures submitted via WhatsApp/Mobile
+  const syncIncomingSignatures = async () => {
+    try {
+      const recentTokens = await getRecentSignTokens();
+      if (!Array.isArray(recentTokens) || recentTokens.length === 0) return;
+
+      recentTokens.forEach(t => {
+        if (t.status === 'signed' && t.signature && t.slotField) {
+          const cat = (t.formCategory || '').toLowerCase();
+          const slot = t.slotField;
+          const sig = t.signature;
+          const signer = t.signerName || t.assignedName;
+
+          if (cat.includes('kosan') || cat.includes('kos')) {
+            setKosanData(prev => {
+              if (prev && prev[slot] !== sig) {
+                const nameField = slot.replace('Sign', 'Nama');
+                return { ...prev, [slot]: sig, [nameField]: prev[nameField] || signer || prev[nameField] };
+              }
+              return prev;
+            });
+          } else if (cat.includes('makan') || cat.includes('konsumsi')) {
+            setMakanData(prev => {
+              if (prev && prev[slot] !== sig) {
+                const nameField = slot.replace('Sign', 'Nama');
+                return { ...prev, [slot]: sig, [nameField]: prev[nameField] || signer || prev[nameField] };
+              }
+              return prev;
+            });
+          } else if (cat.includes('lembur')) {
+            setLemburData(prev => {
+              if (prev && prev[slot] !== sig) {
+                const nameField = slot.replace('Sign', 'Nama');
+                return { ...prev, [slot]: sig, [nameField]: prev[nameField] || signer || prev[nameField] };
+              }
+              return prev;
+            });
+          } else if (cat.includes('akomodasi') || cat.includes('dinas')) {
+            setAkomodasiData(prev => {
+              if (prev && prev[slot] !== sig) {
+                const nameField = slot.replace('Sign', 'Nama');
+                return { ...prev, [slot]: sig, [nameField]: prev[nameField] || signer || prev[nameField] };
+              }
+              return prev;
+            });
+          } else if (cat.includes('pembelian') || cat.includes('barang')) {
+            setPembelianData(prev => {
+              if (prev && prev[slot] !== sig) {
+                const nameField = slot.replace('Sign', 'Nama');
+                return { ...prev, [slot]: sig, [nameField]: prev[nameField] || signer || prev[nameField] };
+              }
+              return prev;
+            });
+          } else if (cat.includes('surat') || cat.includes('tugas') || cat.includes('sppd')) {
+            setSuratData(prev => {
+              if (prev && prev[slot] !== sig) {
+                const nameField = slot.replace('Sign', 'Nama');
+                return { ...prev, [slot]: sig, [nameField]: prev[nameField] || signer || prev[nameField] };
+              }
+              return prev;
+            });
+          }
+        }
+      });
+    } catch (e) {
+      console.warn('Error syncing signatures:', e);
+    }
+  };
+
+  useEffect(() => {
+    syncIncomingSignatures();
+    const interval = setInterval(() => {
+      syncIncomingSignatures();
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Reset to Sample Template Data
   const handleResetSample = () => {
@@ -167,6 +365,7 @@ function MainApp() {
       if (activeTab === 'lembur') setLemburData(initialLemburData);
       if (activeTab === 'akomodasi') setAkomodasiData(initialAkomodasiData);
       if (activeTab === 'pembelian') setPembelianData(initialPembelianData);
+      if (activeTab === 'surat') setSuratData(initialSuratData);
       showToast('Data contoh template berhasil dimuat!');
     }
   };
@@ -212,6 +411,10 @@ function MainApp() {
       currentData = pembelianData;
       title = `Pembelian Barang - ${pembelianData.nama || 'Galih'} (${pembelianData.dept || 'Developer'})`;
       total = (pembelianData.items || []).reduce((acc, it) => acc + ((Number(it.qty) || 0) * (Number(it.hargaSatuan) || 0)), 0);
+    } else if (activeTab === 'surat') {
+      currentData = suratData;
+      title = `Surat Tugas - ${suratData.personelNama || 'Personel'} (${suratData.nomorSurat || 'SPPD'})`;
+      total = 0;
     }
 
     const res = await saveDocument(activeTab, title, currentData, total);
@@ -251,6 +454,8 @@ function MainApp() {
       setAkomodasiData({ ...initialAkomodasiData, ...parsedData });
     } else if (targetType === 'pembelian') {
       setPembelianData({ ...initialPembelianData, ...parsedData });
+    } else if (targetType === 'surat') {
+      setSuratData({ ...initialSuratData, ...parsedData });
     }
 
     showToast(`Dokumen "${doc.title || 'Draft'}" berhasil dimuat!`);
@@ -277,6 +482,9 @@ function MainApp() {
     } else if (activeTab === 'pembelian') {
       filename = `Permintaan_Pembelian_Barang_${pembelianData.nama || 'Staff'}_${pembelianData.tanggal || '2026'}.pdf`;
       orientation = 'landscape';
+    } else if (activeTab === 'surat') {
+      filename = `Surat_Tugas_${suratData.personelNama || 'Personel'}_${suratData.nomorSurat || 'SPPD'}.pdf`;
+      orientation = 'portrait';
     }
 
     try {
@@ -356,6 +564,7 @@ function MainApp() {
                 data={kosanData}
                 onChange={setKosanData}
                 onOpenSignatureModal={handleOpenSignature}
+                onOpenShareLink={handleOpenShareSign}
               />
             )}
 
@@ -364,6 +573,7 @@ function MainApp() {
                 data={makanData}
                 onChange={setMakanData}
                 onOpenSignatureModal={handleOpenSignature}
+                onOpenShareLink={handleOpenShareSign}
               />
             )}
 
@@ -372,6 +582,7 @@ function MainApp() {
                 data={lemburData}
                 onChange={setLemburData}
                 onOpenSignatureModal={handleOpenSignature}
+                onOpenShareLink={handleOpenShareSign}
               />
             )}
 
@@ -380,6 +591,7 @@ function MainApp() {
                 data={akomodasiData}
                 onChange={setAkomodasiData}
                 onOpenSignatureModal={handleOpenSignature}
+                onOpenShareLink={handleOpenShareSign}
               />
             )}
 
@@ -388,6 +600,16 @@ function MainApp() {
                 data={pembelianData}
                 onChange={setPembelianData}
                 onOpenSignatureModal={handleOpenSignature}
+                onOpenShareLink={handleOpenShareSign}
+              />
+            )}
+
+            {activeTab === 'surat' && (
+              <SuratForm
+                data={suratData}
+                onChange={setSuratData}
+                onOpenSignatureModal={handleOpenSignature}
+                onOpenShareLink={handleOpenShareSign}
               />
             )}
           </div>
@@ -413,6 +635,8 @@ function MainApp() {
                   ? 'Landscape (Multi-Halaman)'
                   : activeTab === 'pembelian'
                   ? 'Landscape (1 Halaman)'
+                  : activeTab === 'surat'
+                  ? 'Portrait (1 Halaman)'
                   : 'Portrait (2 Halaman)'}
               </span>
             </div>
@@ -473,6 +697,7 @@ function MainApp() {
               {activeTab === 'lembur' && <LemburPreview data={lemburData} />}
               {activeTab === 'akomodasi' && <AkomodasiPreview data={akomodasiData} />}
               {activeTab === 'pembelian' && <PembelianPreview data={pembelianData} />}
+              {activeTab === 'surat' && <SuratPreview data={suratData} />}
             </div>
           </div>
         </section>
@@ -537,6 +762,20 @@ function MainApp() {
         onClose={() => setIsHistoryOpen(false)}
         onLoadDoc={handleLoadDocument}
       />
+
+      {/* Public 1-Hour Guest Signing Link Modal (WhatsApp Sharing) */}
+      <ShareSignLinkModal
+        isOpen={shareSignModal.isOpen}
+        onClose={() => setShareSignModal(prev => ({ ...prev, isOpen: false }))}
+        slotField={shareSignModal.slotField}
+        slotTitle={shareSignModal.slotTitle}
+        assignedName={shareSignModal.assignedName}
+        formCategory={shareSignModal.formCategory}
+        docTitle={shareSignModal.docTitle}
+        totalAmount={shareSignModal.totalAmount}
+        docDetails={shareSignModal.docDetails}
+        onSignatureReceived={handleSignatureReceivedFromShare}
+      />
     </div>
   );
 }
@@ -544,7 +783,9 @@ function MainApp() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <MainApp />
+      <EmployeeProvider>
+        <MainApp />
+      </EmployeeProvider>
     </ErrorBoundary>
   );
 }

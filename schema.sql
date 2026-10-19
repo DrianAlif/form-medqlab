@@ -34,5 +34,22 @@ INSERT OR IGNORE INTO presets (id, category, name, details) VALUES
 ('p-1', 'employee', 'Alif Drian', '{"nik": "NPP-0033", "jabatan": "Implementator", "department": "Project"}'),
 ('p-2', 'approver', 'Ferry Lukito', '{"jabatan": "HOD", "department": "Project"}'),
 ('p-3', 'approver', 'Direktur', '{"jabatan": "Direktur"}'),
-('p-4', 'project', 'LIS v2 MedQLab - RSCM Jakarta', '{"project": "LIS v2 MedQLab", "hospital": "RSCM Jakarta", "phase": "Pendampingan Medqlab"}'),
-('p-5', 'project', 'LIS MedQLab - RSCM', '{"project": "LIS MedQLab", "hospital": "RSCM", "phase": "Implementasi MedQLab"}');
+('p-4', 'project', 'LIS v2 MedQLab - RSCM Jakarta', '{"project": "LIS v2 MedQLab", "hospital": "RSCM Jakarta", "phase": "Pendampingan Medqlab"}');
+-- 4. Remote Public Signing Tokens (1-Hour Expiring Links)
+CREATE TABLE IF NOT EXISTS sign_tokens (
+    token TEXT PRIMARY KEY,
+    slot_field TEXT,
+    slot_title TEXT,
+    assigned_name TEXT,
+    assigned_role TEXT,
+    form_category TEXT,
+    doc_title TEXT,
+    total_amount REAL,
+    doc_details TEXT,
+    created_at INTEGER,
+    expires_at INTEGER,
+    status TEXT,
+    signature TEXT,
+    signed_at TEXT,
+    signer_name TEXT
+);

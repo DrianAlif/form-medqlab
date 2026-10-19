@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { Plus, Trash2, PenTool, Users, Sparkles, Calendar, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { formatRupiah } from '../utils/currency';
 import { getMonthPeriodInfo, getCustomRangeInfo, INDO_MONTHS } from '../utils/datePeriod';
+import { getTodayDateString } from '../utils/dateUtils';
+import { SignatureActionButton } from '../components/SignatureActionButton';
+import { AssignEmployeeButton } from '../components/AssignEmployeeButton';
 
-export function MakanForm({ data, onChange, onOpenSignatureModal }) {
+export function MakanForm({ data, onChange, onOpenSignatureModal, onOpenShareLink }) {
   const updateField = (field, value) => {
     onChange({ ...data, [field]: value });
   };
@@ -185,7 +188,7 @@ export function MakanForm({ data, onChange, onOpenSignatureModal }) {
             <label className="block text-xs font-semibold text-slate-600 mb-1">Tanggal Dokumen</label>
             <input
               type="date"
-              value={data.tanggal || ''}
+              value={data.tanggal || getTodayDateString()}
               onChange={(e) => updateField('tanggal', e.target.value)}
               className="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
             />
@@ -220,7 +223,15 @@ export function MakanForm({ data, onChange, onOpenSignatureModal }) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Pemohon */}
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
-              <span className="text-[11px] font-bold text-slate-700">1. Dibuat Oleh (Pemohon)</span>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-bold text-slate-700">1. Dibuat Oleh (Pemohon)</span>
+                <AssignEmployeeButton
+                  currentValue={data.pemohonNama}
+                  slotTitle="Pemohon"
+                  onSelect={(emp) => updateField('pemohonNama', emp.name)}
+                  onClear={() => updateField('pemohonNama', '')}
+                />
+              </div>
               <input
                 type="text"
                 value={data.pemohonNama || ''}
@@ -228,19 +239,28 @@ export function MakanForm({ data, onChange, onOpenSignatureModal }) {
                 placeholder="Nama Pemohon"
                 className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-white"
               />
-              <button
-                type="button"
-                onClick={() => onOpenSignatureModal('pemohonSign', data.pemohonNama)}
-                className="w-full flex items-center justify-center gap-1.5 text-xs bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 py-1.5 rounded transition"
-              >
-                <PenTool className="w-3.5 h-3.5" />
-                {data.pemohonSign ? 'Ubah TTD' : 'Beri TTD'}
-              </button>
+              <SignatureActionButton
+                targetField="pemohonSign"
+                assignedName={data.pemohonNama}
+                slotType="pemohon"
+                existingSignature={data.pemohonSign}
+                onOpenSignatureModal={onOpenSignatureModal}
+                onOpenShareLink={onOpenShareLink}
+                title={data.pemohonNama || 'Pemohon'}
+              />
             </div>
 
             {/* HOD */}
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
-              <span className="text-[11px] font-bold text-slate-700">2. Disetujui Oleh (HOD)</span>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-bold text-slate-700">2. Disetujui Oleh (HOD)</span>
+                <AssignEmployeeButton
+                  currentValue={data.hodNama}
+                  slotTitle="HOD"
+                  onSelect={(emp) => updateField('hodNama', emp.name)}
+                  onClear={() => updateField('hodNama', '')}
+                />
+              </div>
               <input
                 type="text"
                 value={data.hodNama || ''}
@@ -248,19 +268,28 @@ export function MakanForm({ data, onChange, onOpenSignatureModal }) {
                 placeholder="Nama HOD"
                 className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-white"
               />
-              <button
-                type="button"
-                onClick={() => onOpenSignatureModal('hodSign', data.hodNama)}
-                className="w-full flex items-center justify-center gap-1.5 text-xs bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 py-1.5 rounded transition"
-              >
-                <PenTool className="w-3.5 h-3.5" />
-                {data.hodSign ? 'Ubah TTD' : 'Beri TTD'}
-              </button>
+              <SignatureActionButton
+                targetField="hodSign"
+                assignedName={data.hodNama}
+                slotType="hod"
+                existingSignature={data.hodSign}
+                onOpenSignatureModal={onOpenSignatureModal}
+                onOpenShareLink={onOpenShareLink}
+                title={data.hodNama || 'HOD'}
+              />
             </div>
 
             {/* Direktur */}
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
-              <span className="text-[11px] font-bold text-slate-700">3. Disetujui Oleh (Direktur)</span>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-bold text-slate-700">3. Disetujui Oleh (Direktur)</span>
+                <AssignEmployeeButton
+                  currentValue={data.direkturNama}
+                  slotTitle="Direktur"
+                  onSelect={(emp) => updateField('direkturNama', emp.name)}
+                  onClear={() => updateField('direkturNama', '')}
+                />
+              </div>
               <input
                 type="text"
                 value={data.direkturNama || ''}
@@ -268,14 +297,15 @@ export function MakanForm({ data, onChange, onOpenSignatureModal }) {
                 placeholder="Nama Direktur"
                 className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-white"
               />
-              <button
-                type="button"
-                onClick={() => onOpenSignatureModal('direkturSign', data.direkturNama)}
-                className="w-full flex items-center justify-center gap-1.5 text-xs bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 py-1.5 rounded transition"
-              >
-                <PenTool className="w-3.5 h-3.5" />
-                {data.direkturSign ? 'Ubah TTD' : 'Beri TTD'}
-              </button>
+              <SignatureActionButton
+                targetField="direkturSign"
+                assignedName={data.direkturNama}
+                slotType="direktur"
+                existingSignature={data.direkturSign}
+                onOpenSignatureModal={onOpenSignatureModal}
+                onOpenShareLink={onOpenShareLink}
+                title={data.direkturNama || 'Direktur'}
+              />
             </div>
           </div>
         </div>
