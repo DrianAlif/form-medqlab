@@ -25,14 +25,18 @@ export async function fetchSavedDocuments() {
   }
 }
 
-export async function saveDocument(type, title, data, totalAmount = 0) {
+export async function saveDocument(type, title, data, totalAmount = 0, docId = null) {
+  const isUpdate = Boolean(docId);
+  const now = new Date().toISOString();
+  const idToUse = docId || `doc-${Date.now()}`;
+
   const docPayload = {
-    id: `doc-${Date.now()}`,
+    id: idToUse,
     type,
     title,
     data,
     total_amount: totalAmount,
-    created_at: new Date().toISOString()
+    updated_at: now
   };
 
   // Try D1 Cloudflare Worker API
@@ -53,13 +57,21 @@ export async function saveDocument(type, title, data, totalAmount = 0) {
   // Always keep localStorage synchronized as well
   try {
     const existing = await fetchSavedDocuments();
-    const filtered = Array.isArray(existing) ? existing.filter(d => d.id !== docPayload.id) : [];
-    const updated = [docPayload, ...filtered];
+    let updated;
+    const foundIndex = existing.findIndex(d => d.id === idToUse);
+    if (foundIndex >= 0) {
+      docPayload.created_at = existing[foundIndex].created_at || now;
+      updated = [...existing];
+      updated[foundIndex] = { ...existing[foundIndex], ...docPayload };
+    } else {
+      docPayload.created_at = now;
+      updated = [docPayload, ...existing.filter(d => d.id !== idToUse)];
+    }
     localStorage.setItem(LOCAL_STORAGE_KEY_DOCS, JSON.stringify(updated));
-    return { success: true, doc: docPayload, source: savedToApi ? 'D1' : 'localStorage' };
+    return { success: true, doc: docPayload, isUpdate, source: savedToApi ? 'D1' : 'localStorage' };
   } catch (e) {
     console.error('Failed to save to localStorage', e);
-    return { success: savedToApi, error: e.message };
+    return { success: savedToApi, doc: docPayload, isUpdate, error: e.message };
   }
 }
 

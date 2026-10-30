@@ -89,6 +89,20 @@ function MainApp() {
   const [activeTab, setActiveTab] = useState('kosan'); // 'kosan' | 'makan' | 'lembur' | 'akomodasi' | 'pembelian' | 'surat'
   const [viewMode, setViewMode] = useState('form'); // 'form' | 'preview' (For mobile/tablet < lg)
   
+  // Track active draft document ID per category so edits can update in-place without losing signatures
+  const [activeDocs, setActiveDocs] = useState({
+    kosan: null,
+    makan: null,
+    lembur: null,
+    akomodasi: null,
+    pembelian: null,
+    surat: null
+  });
+  const activeDocsRef = React.useRef(activeDocs);
+  useEffect(() => {
+    activeDocsRef.current = activeDocs;
+  }, [activeDocs]);
+
   const [kosanData, setKosanData] = useState(initialKosanData);
   const [makanData, setMakanData] = useState(initialMakanData);
   const [lemburData, setLemburData] = useState(initialLemburData);
@@ -169,32 +183,124 @@ function MainApp() {
     });
   };
 
-  // Save Signature callback
+  // Helper to extract document metadata (title & total) for draft persistence
+  const getDocMeta = (tab, data) => {
+    let title = 'Dokumen Resmi';
+    let total = 0;
+    if (!data) return { title, total };
+
+    if (tab === 'kosan') {
+      title = `Kosan - ${data.rumahSakit || 'RSCM'} (${data.periode || 'Periode'})`;
+      const pCats = getNormalizedParentCategories(data);
+      total = pCats.reduce((accP, p) => {
+        const pTot = (p.subCategories || []).reduce((accS, s) => {
+          return accS + (s.items || []).reduce((accI, it) => accI + ((Number(it.qty) || 0) * (Number(it.hargaSatuan) || 0)), 0);
+        }, 0);
+        return accP + pTot;
+      }, 0);
+    } else if (tab === 'makan') {
+      title = `Uang Makan - ${data.dibayarkanKepada || 'Tim'} (${data.periode || ''})`;
+      total = (data.items || []).reduce((a, b) => a + ((Number(b.qty || b.porsi) || 0) * (Number(b.hargaSatuan) || 0)), 0);
+    } else if (tab === 'lembur') {
+      title = `Kompensasi Kerja - ${data.nama || ''} (${data.bulan || ''})`;
+      total = (data.items || []).reduce((a, b) => a + (Number(b.jamCount) || 0), 0);
+    } else if (tab === 'akomodasi') {
+      title = `Laporan Akomodasi - ${data.nama || 'Pegawai'} (${data.customer || 'Project'})`;
+      total = (data.items || []).reduce((acc, it) => {
+        return acc + (Number(it.bensin) || 0) +
+          (Number(it.tolParkir) || 0) +
+          (Number(it.pjs) || 0) +
+          (Number(it.hotel) || 0) +
+          (Number(it.entertaint) || 0) +
+          (Number(it.tiket) || 0) +
+          (Number(it.fotocopy) || 0) +
+          (Number(it.lainLain) || 0);
+      }, 0);
+    } else if (tab === 'pembelian') {
+      title = `Pembelian Barang - ${data.nama || 'Galih'} (${data.dept || 'Developer'})`;
+      total = (data.items || []).reduce((acc, it) => acc + ((Number(it.qty) || 0) * (Number(it.hargaSatuan) || 0)), 0);
+    } else if (tab === 'surat') {
+      title = `Surat Tugas - ${data.personelNama || 'Personel'} (${data.nomorSurat || 'SPPD'})`;
+      total = 0;
+    }
+    return { title, total };
+  };
+
+  const getCurrentFormData = (tab) => {
+    switch (tab) {
+      case 'kosan': return kosanData;
+      case 'makan': return makanData;
+      case 'lembur': return lemburData;
+      case 'akomodasi': return akomodasiData;
+      case 'pembelian': return pembelianData;
+      case 'surat': return suratData;
+      default: return kosanData;
+    }
+  };
+
+  // Immediate Auto-Save to Cloudflare D1 whenever any signature is applied or received
+  const autoSaveSignature = async (targetTab, updatedData, slotLabel = '') => {
+    try {
+      const { title, total } = getDocMeta(targetTab, updatedData);
+      const activeDoc = activeDocsRef.current[targetTab];
+      const targetDocId = activeDoc?.id || null;
+
+      const res = await saveDocument(targetTab, title, updatedData, total, targetDocId);
+      if (res && res.success && res.doc) {
+        setActiveDocs(prev => ({
+          ...prev,
+          [targetTab]: {
+            id: res.doc.id,
+            title: res.doc.title || title,
+            created_at: res.doc.created_at,
+            updated_at: res.doc.updated_at
+          }
+        }));
+        showToast(`Tanda tangan ${slotLabel ? `"${slotLabel}" ` : ''}tersimpan otomatis ke D1!`, 'success');
+      }
+    } catch (err) {
+      console.warn('Auto-save signature failed:', err);
+    }
+  };
+
+  // Save Signature callback from Canvas Modal
   const handleSaveSignature = (dataUrl) => {
-    const { targetField } = sigModal;
+    const { targetField, title } = sigModal;
     if (!targetField) return;
 
+    let updatedData = null;
     if (activeTab === 'kosan') {
-      setKosanData(prev => ({ ...prev, [targetField]: dataUrl }));
+      updatedData = { ...kosanData, [targetField]: dataUrl };
+      setKosanData(updatedData);
     } else if (activeTab === 'makan') {
       if (targetField.startsWith('makan_item_')) {
         const itemIdx = parseInt(targetField.replace('makan_item_', ''), 10);
         const newItems = [...(makanData.items || [])];
         if (newItems[itemIdx]) {
           newItems[itemIdx] = { ...newItems[itemIdx], ttd: dataUrl };
-          setMakanData(prev => ({ ...prev, items: newItems }));
+          updatedData = { ...makanData, items: newItems };
+          setMakanData(updatedData);
         }
       } else {
-        setMakanData(prev => ({ ...prev, [targetField]: dataUrl }));
+        updatedData = { ...makanData, [targetField]: dataUrl };
+        setMakanData(updatedData);
       }
     } else if (activeTab === 'lembur') {
-      setLemburData(prev => ({ ...prev, [targetField]: dataUrl }));
+      updatedData = { ...lemburData, [targetField]: dataUrl };
+      setLemburData(updatedData);
     } else if (activeTab === 'akomodasi') {
-      setAkomodasiData(prev => ({ ...prev, [targetField]: dataUrl }));
+      updatedData = { ...akomodasiData, [targetField]: dataUrl };
+      setAkomodasiData(updatedData);
     } else if (activeTab === 'pembelian') {
-      setPembelianData(prev => ({ ...prev, [targetField]: dataUrl }));
+      updatedData = { ...pembelianData, [targetField]: dataUrl };
+      setPembelianData(updatedData);
     } else if (activeTab === 'surat') {
-      setSuratData(prev => ({ ...prev, [targetField]: dataUrl }));
+      updatedData = { ...suratData, [targetField]: dataUrl };
+      setSuratData(updatedData);
+    }
+
+    if (updatedData) {
+      autoSaveSignature(activeTab, updatedData, title || targetField);
     }
   };
 
@@ -263,18 +369,53 @@ function MainApp() {
     const slotField = slotFieldParam || shareSignModal.slotField;
     if (!slotField) return;
 
+    let updatedData = null;
     if (activeTab === 'kosan') {
-      setKosanData(prev => ({ ...prev, [slotField]: signature }));
+      updatedData = { ...kosanData, [slotField]: signature };
+      if (signerName) {
+        const nameField = slotField.replace('Sign', 'Nama');
+        if (!updatedData[nameField]) updatedData[nameField] = signerName;
+      }
+      setKosanData(updatedData);
     } else if (activeTab === 'makan') {
-      setMakanData(prev => ({ ...prev, [slotField]: signature }));
+      updatedData = { ...makanData, [slotField]: signature };
+      if (signerName) {
+        const nameField = slotField.replace('Sign', 'Nama');
+        if (!updatedData[nameField]) updatedData[nameField] = signerName;
+      }
+      setMakanData(updatedData);
     } else if (activeTab === 'lembur') {
-      setLemburData(prev => ({ ...prev, [slotField]: signature }));
+      updatedData = { ...lemburData, [slotField]: signature };
+      if (signerName) {
+        const nameField = slotField.replace('Sign', 'Nama');
+        if (!updatedData[nameField]) updatedData[nameField] = signerName;
+      }
+      setLemburData(updatedData);
     } else if (activeTab === 'akomodasi') {
-      setAkomodasiData(prev => ({ ...prev, [slotField]: signature }));
+      updatedData = { ...akomodasiData, [slotField]: signature };
+      if (signerName) {
+        const nameField = slotField.replace('Sign', 'Nama');
+        if (!updatedData[nameField]) updatedData[nameField] = signerName;
+      }
+      setAkomodasiData(updatedData);
     } else if (activeTab === 'pembelian') {
-      setPembelianData(prev => ({ ...prev, [slotField]: signature }));
+      updatedData = { ...pembelianData, [slotField]: signature };
+      if (signerName) {
+        const nameField = slotField.replace('Sign', 'Nama');
+        if (!updatedData[nameField]) updatedData[nameField] = signerName;
+      }
+      setPembelianData(updatedData);
     } else if (activeTab === 'surat') {
-      setSuratData(prev => ({ ...prev, [slotField]: signature }));
+      updatedData = { ...suratData, [slotField]: signature };
+      if (signerName) {
+        const nameField = slotField.replace('Sign', 'Nama');
+        if (!updatedData[nameField]) updatedData[nameField] = signerName;
+      }
+      setSuratData(updatedData);
+    }
+
+    if (updatedData) {
+      autoSaveSignature(activeTab, updatedData, shareSignModal.slotTitle || slotField);
     }
 
     showToast(`Tanda tangan untuk ${shareSignModal.slotTitle || slotField} berhasil diterima dari WhatsApp!`, 'success');
@@ -297,7 +438,9 @@ function MainApp() {
             setKosanData(prev => {
               if (prev && prev[slot] !== sig) {
                 const nameField = slot.replace('Sign', 'Nama');
-                return { ...prev, [slot]: sig, [nameField]: prev[nameField] || signer || prev[nameField] };
+                const next = { ...prev, [slot]: sig, [nameField]: prev[nameField] || signer || prev[nameField] };
+                autoSaveSignature('kosan', next, t.slotTitle || slot);
+                return next;
               }
               return prev;
             });
@@ -305,7 +448,9 @@ function MainApp() {
             setMakanData(prev => {
               if (prev && prev[slot] !== sig) {
                 const nameField = slot.replace('Sign', 'Nama');
-                return { ...prev, [slot]: sig, [nameField]: prev[nameField] || signer || prev[nameField] };
+                const next = { ...prev, [slot]: sig, [nameField]: prev[nameField] || signer || prev[nameField] };
+                autoSaveSignature('makan', next, t.slotTitle || slot);
+                return next;
               }
               return prev;
             });
@@ -313,7 +458,9 @@ function MainApp() {
             setLemburData(prev => {
               if (prev && prev[slot] !== sig) {
                 const nameField = slot.replace('Sign', 'Nama');
-                return { ...prev, [slot]: sig, [nameField]: prev[nameField] || signer || prev[nameField] };
+                const next = { ...prev, [slot]: sig, [nameField]: prev[nameField] || signer || prev[nameField] };
+                autoSaveSignature('lembur', next, t.slotTitle || slot);
+                return next;
               }
               return prev;
             });
@@ -321,7 +468,9 @@ function MainApp() {
             setAkomodasiData(prev => {
               if (prev && prev[slot] !== sig) {
                 const nameField = slot.replace('Sign', 'Nama');
-                return { ...prev, [slot]: sig, [nameField]: prev[nameField] || signer || prev[nameField] };
+                const next = { ...prev, [slot]: sig, [nameField]: prev[nameField] || signer || prev[nameField] };
+                autoSaveSignature('akomodasi', next, t.slotTitle || slot);
+                return next;
               }
               return prev;
             });
@@ -329,7 +478,9 @@ function MainApp() {
             setPembelianData(prev => {
               if (prev && prev[slot] !== sig) {
                 const nameField = slot.replace('Sign', 'Nama');
-                return { ...prev, [slot]: sig, [nameField]: prev[nameField] || signer || prev[nameField] };
+                const next = { ...prev, [slot]: sig, [nameField]: prev[nameField] || signer || prev[nameField] };
+                autoSaveSignature('pembelian', next, t.slotTitle || slot);
+                return next;
               }
               return prev;
             });
@@ -337,7 +488,9 @@ function MainApp() {
             setSuratData(prev => {
               if (prev && prev[slot] !== sig) {
                 const nameField = slot.replace('Sign', 'Nama');
-                return { ...prev, [slot]: sig, [nameField]: prev[nameField] || signer || prev[nameField] };
+                const next = { ...prev, [slot]: sig, [nameField]: prev[nameField] || signer || prev[nameField] };
+                autoSaveSignature('surat', next, t.slotTitle || slot);
+                return next;
               }
               return prev;
             });
@@ -357,71 +510,58 @@ function MainApp() {
     return () => clearInterval(interval);
   }, []);
 
-  // Reset to Sample Template Data
+  // Reset to Sample Template Data (Detaches active draft ID)
   const handleResetSample = () => {
-    if (window.confirm('Muat ulang data contoh template untuk kategori ini?')) {
+    if (window.confirm('Muat ulang data contoh template untuk kategori ini? Status draf aktif saat ini akan dilepas.')) {
       if (activeTab === 'kosan') setKosanData(initialKosanData);
       if (activeTab === 'makan') setMakanData(initialMakanData);
       if (activeTab === 'lembur') setLemburData(initialLemburData);
       if (activeTab === 'akomodasi') setAkomodasiData(initialAkomodasiData);
       if (activeTab === 'pembelian') setPembelianData(initialPembelianData);
       if (activeTab === 'surat') setSuratData(initialSuratData);
+
+      setActiveDocs(prev => ({
+        ...prev,
+        [activeTab]: null
+      }));
       showToast('Data contoh template berhasil dimuat!');
     }
   };
 
-  // Save Draft to Cloudflare D1 / Storage
-  const handleSaveDraft = async () => {
-    let currentData = kosanData;
-    let title = 'Pengajuan Uang Kosan';
-    let total = 0;
+  // Start fresh new draft (detaches current active draft ID)
+  const handleNewDoc = () => {
+    setActiveDocs(prev => ({
+      ...prev,
+      [activeTab]: null
+    }));
+    showToast(`Draf dilepas. Simpan berikutnya akan menjadi Draf Baru.`);
+  };
 
-    if (activeTab === 'kosan') {
-      currentData = kosanData;
-      title = `Kosan - ${kosanData.rumahSakit || 'RSCM'} (${kosanData.periode || 'Periode'})`;
-      const pCats = getNormalizedParentCategories(kosanData);
-      total = pCats.reduce((accP, p) => {
-        const pTot = (p.subCategories || []).reduce((accS, s) => {
-          return accS + (s.items || []).reduce((accI, it) => accI + ((Number(it.qty) || 0) * (Number(it.hargaSatuan) || 0)), 0);
-        }, 0);
-        return accP + pTot;
-      }, 0);
-    } else if (activeTab === 'makan') {
-      currentData = makanData;
-      title = `Uang Makan - ${makanData.dibayarkanKepada || 'Tim'} (${makanData.periode || ''})`;
-      total = (makanData.items || []).reduce((a, b) => a + ((Number(b.qty) || 0) * (Number(b.hargaSatuan) || 0)), 0);
-    } else if (activeTab === 'lembur') {
-      currentData = lemburData;
-      title = `Kompensasi Kerja - ${lemburData.nama || ''} (${lemburData.bulan || ''})`;
-      total = (lemburData.items || []).reduce((a, b) => a + (Number(b.jamCount) || 0), 0);
-    } else if (activeTab === 'akomodasi') {
-      currentData = akomodasiData;
-      title = `Laporan Akomodasi - ${akomodasiData.nama || 'Pegawai'} (${akomodasiData.customer || 'Project'})`;
-      total = (akomodasiData.items || []).reduce((acc, it) => {
-        return acc + (Number(it.bensin) || 0) +
-          (Number(it.tolParkir) || 0) +
-          (Number(it.pjs) || 0) +
-          (Number(it.hotel) || 0) +
-          (Number(it.entertaint) || 0) +
-          (Number(it.tiket) || 0) +
-          (Number(it.fotocopy) || 0) +
-          (Number(it.lainLain) || 0);
-      }, 0);
-    } else if (activeTab === 'pembelian') {
-      currentData = pembelianData;
-      title = `Pembelian Barang - ${pembelianData.nama || 'Galih'} (${pembelianData.dept || 'Developer'})`;
-      total = (pembelianData.items || []).reduce((acc, it) => acc + ((Number(it.qty) || 0) * (Number(it.hargaSatuan) || 0)), 0);
-    } else if (activeTab === 'surat') {
-      currentData = suratData;
-      title = `Surat Tugas - ${suratData.personelNama || 'Personel'} (${suratData.nomorSurat || 'SPPD'})`;
-      total = 0;
-    }
+  // Save / Update Draft to Cloudflare D1
+  const handleSaveDraft = async (forceNew = false) => {
+    const currentData = getCurrentFormData(activeTab);
+    const { title, total } = getDocMeta(activeTab, currentData);
+    const existingDoc = activeDocsRef.current[activeTab];
+    const targetDocId = (!forceNew && existingDoc) ? existingDoc.id : null;
 
-    const res = await saveDocument(activeTab, title, currentData, total);
-    if (res.success) {
-      showToast('Draft berhasil disimpan ke database!');
+    const res = await saveDocument(activeTab, title, currentData, total, targetDocId);
+    if (res && res.success && res.doc) {
+      setActiveDocs(prev => ({
+        ...prev,
+        [activeTab]: {
+          id: res.doc.id,
+          title: res.doc.title || title,
+          created_at: res.doc.created_at,
+          updated_at: res.doc.updated_at
+        }
+      }));
+      if (targetDocId) {
+        showToast(`Draf "${title}" berhasil diperbarui di D1!`);
+      } else {
+        showToast(`Draf baru "${title}" berhasil disimpan ke D1!`);
+      }
     } else {
-      showToast('Gagal menyimpan draft', 'error');
+      showToast('Gagal menyimpan draf', 'error');
     }
   };
 
@@ -457,6 +597,16 @@ function MainApp() {
     } else if (targetType === 'surat') {
       setSuratData({ ...initialSuratData, ...parsedData });
     }
+
+    setActiveDocs(prev => ({
+      ...prev,
+      [targetType]: {
+        id: doc.id,
+        title: doc.title,
+        created_at: doc.created_at,
+        updated_at: doc.updated_at
+      }
+    }));
 
     showToast(`Dokumen "${doc.title || 'Draft'}" berhasil dimuat!`);
   };
@@ -533,6 +683,8 @@ function MainApp() {
           onViewModeChange={setViewMode}
           onResetSample={handleResetSample}
           onSaveDraft={handleSaveDraft}
+          onNewDoc={handleNewDoc}
+          activeDoc={activeDocs[activeTab]}
           onOpenHistory={() => setIsHistoryOpen(true)}
           onDownloadPdf={handleDownloadPdf}
           onPrint={handlePrint}
@@ -761,6 +913,7 @@ function MainApp() {
         isOpen={isHistoryOpen}
         onClose={() => setIsHistoryOpen(false)}
         onLoadDoc={handleLoadDocument}
+        activeDocId={activeDocs[activeTab]?.id}
       />
 
       {/* Public 1-Hour Guest Signing Link Modal (WhatsApp Sharing) */}
